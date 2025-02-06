@@ -3,8 +3,7 @@
 
 void setup() {
     initLEDs();
-    calibrateLEDs();  // Przetestujmy, jak diody rzeczywiście świecą
-
+    // calibrateLEDs();  // Przetestujmy, jak diody rzeczywiście świecą
     // Dodatkowe czyszczenie na wypadek, gdyby pierwsze nie zadziałało
     clearLEDs();
     showLEDs();

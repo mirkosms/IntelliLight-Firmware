@@ -4,7 +4,7 @@ CRGB leds[NUM_LEDS];
 
 void initLEDs() {
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);  // Ustawienie poprawnego układu GRB
-    FastLED.setBrightness(180);
+    FastLED.setBrightness(200);
     FastLED.clear(true);
     FastLED.show();
     delay(100);
