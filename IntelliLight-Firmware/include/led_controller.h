@@ -22,4 +22,12 @@ void calibrateLEDs();
 void clearLEDs();
 void showLEDs();
 
-#endif
+// Nowe funkcje
+void setBrightness(int brightness);
+void rainbowEffect(int wait);
+void twinkleEffect(CRGB color, int chance, int speed);
+void setZoneColor(int start, int end, CRGB color);
+void pulsingEffect(CRGB color, int speed);
+void nightMode();
+
+#endif // LED_CONTROLLER_H
