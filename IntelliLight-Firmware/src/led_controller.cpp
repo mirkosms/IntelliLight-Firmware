@@ -3,16 +3,11 @@
 CRGB leds[NUM_LEDS];
 
 void initLEDs() {
-    FastLED.addLeds<WS2812B, LED_PIN, RGB>(leds, NUM_LEDS);  // Zmieniamy z GRB na RGB
+    FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);  // Ustawienie poprawnego układu GRB
     FastLED.setBrightness(180);
-
-    // Dodajemy korekcję kolorów dla taśmy WS2812B
-    // FastLED.setCorrection(TypicalLEDStrip);  // Korekcja kolorów specyficzna dla WS2812B
-
-    // Pełne czyszczenie diod przy starcie, aby usunąć efekt GRB
-    FastLED.clear(true);  // Wymuszenie czyszczenia wszystkich diod
-    FastLED.show();       // Wysyłanie pustych danych, aby zresetować diody
-    delay(100);           // Krótkie opóźnienie na zresetowanie diod
+    FastLED.clear(true);
+    FastLED.show();
+    delay(100);
 }
 
 // Ustawienie koloru RGB
@@ -28,21 +23,20 @@ void setWhiteTemperature(int cool, int warm) {
         int red = 0, green = 0, blue = 0;
 
         if (cool > 0 && warm == 0) {
-            // Zimne światło: dominacja niebieskiego, lekka domieszka zieleni
-            blue = cool;
-            green = cool / 6;  // Minimalna domieszka zieleni dla naturalności
-
+            // Zimne światło:
+            blue = cool * 0.4;
+            green = cool * 0.4;
+            red = cool * 0.15;
         } else if (warm > 0 && cool == 0) {
-            // Ciepłe światło: dominacja czerwonego, ZIELONY WYŁĄCZONY
-            red = warm;
-            green = warm / 20;  // Minimalny zielony dla żółtego efektu
-            blue = 0;  // Brak niebieskiego
-
+            // Ciepłe światło:
+            red = warm * 0.6;
+            green = warm * 0.3;
+            blue = warm * 0.1;
         } else {
-            // Neutralne światło: równowaga czerwieni, zieleni i niebieskiego
-            red = warm / 2 + cool / 3;
-            green = (cool + warm) / 4;
-            blue = cool / 2;
+            // Neutralne światło:
+            red = (warm * 0.5) + (cool * 0.3);
+            green = (cool + warm) / 3;
+            blue = cool * 0.4;
         }
 
         // Ograniczenie wartości do bezpiecznego zakresu
@@ -53,6 +47,7 @@ void setWhiteTemperature(int cool, int warm) {
         leds[i] = CRGB(red, green, blue);
     }
 }
+
 
 // Mieszanka RGB i bieli
 void setCustomColor(int r, int g, int b, int w) {
@@ -74,7 +69,6 @@ void fadeToColor(int r, int g, int b, int duration) {
     }
 }
 
-// Funkcja kalibracyjna – test kolorów podstawowych
 void calibrateLEDs() {
     setAllLEDs(255, 0, 0);  // Czerwony
     showLEDs();
