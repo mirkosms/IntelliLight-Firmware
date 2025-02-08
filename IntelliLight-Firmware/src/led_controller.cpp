@@ -1,25 +1,30 @@
 #include "led_controller.h"
 
-CRGB leds[NUM_LEDS];
-
-void initLEDs() {
+LEDController::LEDController() {
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
     FastLED.setBrightness(180);
-    FastLED.clear(true);
-    FastLED.show();
+}
+
+void LEDController::init() {
+    clear();
+    show();
     delay(100);
 }
 
-// Ustawienie koloru RGB
-void setAllLEDs(int r, int g, int b) {
-    for (int i = 0; i < NUM_LEDS; i++) {
-        leds[i] = CRGB(r, g, b);
-    }
+void LEDController::clear() {
+    FastLED.clear();
+}
+
+void LEDController::show() {
     FastLED.show();
 }
 
-// Ustawienie temperatury białego światła
-void setWhiteTemperature(int cool, int warm) {
+void LEDController::setAll(int r, int g, int b) {
+    fill_solid(leds, NUM_LEDS, CRGB(r, g, b));
+    show();
+}
+
+void LEDController::setWhiteTemperature(int cool, int warm) {
     for (int i = 0; i < NUM_LEDS; i++) {
         int red = 0, green = 0, blue = 0;
 
@@ -37,88 +42,60 @@ void setWhiteTemperature(int cool, int warm) {
             blue = cool * 0.4;
         }
 
-        red = constrain(red, 0, 255);
-        green = constrain(green, 0, 255);
-        blue = constrain(blue, 0, 255);
-
-        leds[i] = CRGB(red, green, blue);
+        leds[i] = CRGB(constrain(red, 0, 255), constrain(green, 0, 255), constrain(blue, 0, 255));
     }
-    FastLED.show();
+    show();
 }
 
-// REGULACJA JASNOŚCI
-void setBrightness(int brightness) {
-    brightness = constrain(brightness, 0, 255);
-    FastLED.setBrightness(brightness);
-    FastLED.show();
+void LEDController::setBrightness(int brightness) {
+    FastLED.setBrightness(constrain(brightness, 0, 255));
+    show();
 }
 
-// EFEKT TĘCZY
-void rainbowEffect(int wait) {
+void LEDController::rainbowEffect(int wait) {
     for (int hue = 0; hue < 255; hue++) {
         for (int i = 0; i < NUM_LEDS; i++) {
             leds[i] = CHSV((hue + i * 10) % 255, 255, 255);
         }
-        FastLED.show();
+        show();
         delay(wait);
     }
 }
 
-// EFEKT MIGOTANIA
-void twinkleEffect(CRGB color, int chance, int speed) {
+void LEDController::twinkleEffect(const CRGB& color, int chance, int speed) {
     for (int i = 0; i < NUM_LEDS; i++) {
-        if (random(100) < chance) {
-            leds[i] = color;
-        } else {
-            leds[i] = CRGB::Black;
-        }
+        leds[i] = random(100) < chance ? color : CRGB::Black;
     }
-    FastLED.show();
+    show();
     delay(speed);
 }
 
-// STEROWANIE STREFAMI LED
-void setZoneColor(int start, int end, CRGB color) {
-    start = constrain(start, 0, NUM_LEDS - 1);
-    end = constrain(end, start, NUM_LEDS - 1);
-    for (int i = start; i <= end; i++) {
+void LEDController::setZoneColor(int start, int end, const CRGB& color) {
+    for (int i = constrain(start, 0, NUM_LEDS - 1); i <= constrain(end, start, NUM_LEDS - 1); i++) {
         leds[i] = color;
     }
-    FastLED.show();
+    show();
 }
 
-// EFEKT PULSACJI
-void pulsingEffect(CRGB color, int speed) {
+void LEDController::pulsingEffect(const CRGB& color, int speed) {
     for (int brightness = 0; brightness <= 255; brightness += 5) {
         FastLED.setBrightness(brightness);
         fill_solid(leds, NUM_LEDS, color);
-        FastLED.show();
+        show();
         delay(speed);
     }
     for (int brightness = 255; brightness >= 0; brightness -= 5) {
         FastLED.setBrightness(brightness);
         fill_solid(leds, NUM_LEDS, color);
-        FastLED.show();
+        show();
         delay(speed);
     }
 }
 
-// TRYB NOCNY
-void nightMode() {
+void LEDController::nightMode() {
     for (int brightness = 255; brightness >= 50; brightness -= 5) {
         FastLED.setBrightness(brightness);
-        setAllLEDs(255, 244, 229);  // Ciepłe światło
-        FastLED.show();
-        delay(50);  // Szybkość przejścia
+        setAll(255, 244, 229);  // Ciepłe światło
+        delay(50);
     }
-}
-
-
-// CZYSZCZENIE I POKAZANIE LED
-void clearLEDs() {
-    FastLED.clear();
-}
-
-void showLEDs() {
-    FastLED.show();
 }
