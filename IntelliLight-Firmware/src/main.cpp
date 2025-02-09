@@ -1,19 +1,28 @@
 #include "led_controller.h"
 #include "pomodoro.h"
+#include "sensors.h"
 
 LEDController ledController;
 PomodoroTimer pomodoro(ledController);
+Sensors sensors;  // Używamy klasy Sensors
 
 void setup() {
+    Serial.begin(9600);  // Monitor szeregowy do odczytu danych
     ledController.init();
+    sensors.begin();     // Inicjalizacja czujnika
 }
 
 void loop() {
-    pomodoro.startFocusSession();  // Tryb skupienia na 30 minut (zielony)
-    pomodoro.resetTimer();         // Wyczyść diody po sesji
-    delay(2000);                   // Przerwa między sesjami dla testów
+    float temperature = sensors.readTemperature();
+    float humidity = sensors.readHumidity();
 
-    pomodoro.startBreakSession();  // Tryb przerwy na 5 minut (czerwony)
-    pomodoro.resetTimer();         // Wyczyść diody po sesji
-    delay(2000);                   // Przerwa między sesjami dla testów
+    Serial.print("Temperatura: ");
+    Serial.print(temperature);
+    Serial.println(" °C");
+
+    Serial.print("Wilgotność: ");
+    Serial.print(humidity);
+    Serial.println(" %");
+
+    delay(2000);  // Odczyt co 2 sekundy
 }
