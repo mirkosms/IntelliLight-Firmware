@@ -3,6 +3,9 @@
 LEDController::LEDController() {
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
     FastLED.setBrightness(180);
+    isRainbowActive = false;
+    lastUpdate = 0;
+    rainbowHue = 0;
 }
 
 void LEDController::init() {
@@ -14,6 +17,7 @@ void LEDController::init() {
 void LEDController::clear() {
     FastLED.clear();
     show();
+    isRainbowActive = false;  // Wyłączenie efektu rainbow przy czyszczeniu LED
 }
 
 void LEDController::show() {
@@ -25,7 +29,27 @@ void LEDController::setAll(int r, int g, int b) {
     show();
 }
 
-// Reszta funkcji pozostaje bez zmian
+void LEDController::rainbowEffect() {
+    isRainbowActive = true;   // Włącz efekt rainbow
+}
+
+void LEDController::updateRainbow() {
+    if (isRainbowActive && millis() - lastUpdate > 50) {  // Aktualizacja co 50 ms
+        for (int i = 0; i < NUM_LEDS; i++) {
+            leds[i] = CHSV((rainbowHue + i * 10) % 255, 255, 255);
+        }
+        show();
+        rainbowHue++;
+        lastUpdate = millis();
+    }
+}
+
+void LEDController::stopRainbow() {
+    isRainbowActive = false;
+    clear();  // Wyłącz LED-y po zatrzymaniu efektu
+}
+
+// Pozostałe efekty LED
 void LEDController::setWhiteTemperature(int cool, int warm) {
     for (int i = 0; i < NUM_LEDS; i++) {
         int red = 0, green = 0, blue = 0;
@@ -52,16 +76,6 @@ void LEDController::setWhiteTemperature(int cool, int warm) {
 void LEDController::setBrightness(int brightness) {
     FastLED.setBrightness(constrain(brightness, 0, 255));
     show();
-}
-
-void LEDController::rainbowEffect(int wait) {
-    for (int hue = 0; hue < 255; hue++) {
-        for (int i = 0; i < NUM_LEDS; i++) {
-            leds[i] = CHSV((hue + i * 10) % 255, 255, 255);
-        }
-        show();
-        delay(wait);
-    }
 }
 
 void LEDController::twinkleEffect(const CRGB& color, int chance, int speed) {
