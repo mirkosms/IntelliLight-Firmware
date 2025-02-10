@@ -3,9 +3,13 @@
 LEDController::LEDController() {
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
     FastLED.setBrightness(180);
+    isStaticActive = false;
     isRainbowActive = false;
+    isPulsingActive = false;
     lastUpdate = 0;
     rainbowHue = 0;
+    pulsingBrightness = 0;
+    pulsingDirection = 5;
 }
 
 void LEDController::init() {
@@ -17,7 +21,9 @@ void LEDController::init() {
 void LEDController::clear() {
     FastLED.clear();
     show();
-    isRainbowActive = false;  // Wyłączenie efektu rainbow przy czyszczeniu LED
+    isStaticActive = false;
+    isRainbowActive = false;
+    isPulsingActive = false;
 }
 
 void LEDController::show() {
@@ -29,12 +35,36 @@ void LEDController::setAll(int r, int g, int b) {
     show();
 }
 
-void LEDController::rainbowEffect() {
-    isRainbowActive = true;   // Włącz efekt rainbow
+void LEDController::toggleStatic() {
+    if (isStaticActive) {
+        clear();
+    } else {
+        clear();
+        setAll(0, 0, 255);
+        isStaticActive = true;
+    }
 }
 
-void LEDController::updateRainbow() {
-    if (isRainbowActive && millis() - lastUpdate > 50) {  // Aktualizacja co 50 ms
+void LEDController::toggleRainbow() {
+    if (isRainbowActive) {
+        clear();
+    } else {
+        clear();
+        isRainbowActive = true;
+    }
+}
+
+void LEDController::togglePulsing() {
+    if (isPulsingActive) {
+        clear();
+    } else {
+        clear();
+        isPulsingActive = true;
+    }
+}
+
+void LEDController::updateEffects() {
+    if (isRainbowActive && millis() - lastUpdate > 50) {
         for (int i = 0; i < NUM_LEDS; i++) {
             leds[i] = CHSV((rainbowHue + i * 10) % 255, 255, 255);
         }
@@ -42,11 +72,17 @@ void LEDController::updateRainbow() {
         rainbowHue++;
         lastUpdate = millis();
     }
-}
 
-void LEDController::stopRainbow() {
-    isRainbowActive = false;
-    clear();  // Wyłącz LED-y po zatrzymaniu efektu
+    if (isPulsingActive && millis() - lastUpdate > 50) {
+        FastLED.setBrightness(pulsingBrightness);
+        fill_solid(leds, NUM_LEDS, CRGB::Blue);
+        show();
+        pulsingBrightness += pulsingDirection;
+        if (pulsingBrightness >= 255 || pulsingBrightness <= 0) {
+            pulsingDirection = -pulsingDirection;
+        }
+        lastUpdate = millis();
+    }
 }
 
 // Pozostałe efekty LED
@@ -111,7 +147,7 @@ void LEDController::pulsingEffect(const CRGB& color, int speed) {
 void LEDController::nightMode() {
     for (int brightness = 255; brightness >= 50; brightness -= 5) {
         FastLED.setBrightness(brightness);
-        setAll(255, 244, 229);  // Ciepłe światło
+        setAll(255, 244, 229);
         delay(50);
     }
 }

@@ -2,7 +2,7 @@
 #include "pomodoro.h"
 #include "sensors.h"
 #include "wifi_manager.h"
-#include <WebServer.h>  // Do obsługi serwera HTTP
+#include <WebServer.h>
 
 // Dane do Wi-Fi
 const char* ssid = "FunBox2-99AC";
@@ -12,13 +12,12 @@ LEDController ledController;
 PomodoroTimer pomodoro(ledController);
 Sensors sensors;
 WiFiManager wifiManager(ssid, password);
-WebServer server(80);  // Serwer na porcie 80
+WebServer server(80);
 
 void handleRoot() {
     float temperature = sensors.readTemperature();
     float humidity = sensors.readHumidity();
 
-    // Odpowiedź w formacie JSON
     String response = "{";
     response += "\"temperature\": " + String(temperature, 2) + ",";
     response += "\"humidity\": " + String(humidity, 2);
@@ -27,24 +26,17 @@ void handleRoot() {
     server.send(200, "application/json", response);
 }
 
-void handleLedOn() {
-    ledController.setAll(0, 0, 255);  // Ustawienie niebieskiego koloru
-    server.send(200, "text/plain", "LED włączone (niebieski)");
-}
-
-void handleLedOff() {
-    ledController.clear();  // Wyłączenie LED-ów
-    server.send(200, "text/plain", "LED wyłączone");
-}
-
-void handleRainbowOn() {
-    ledController.rainbowEffect();  // Włącz efekt rainbow
-    server.send(200, "text/plain", "Efekt rainbow włączony");
-}
-
-void handleRainbowOff() {
-    ledController.stopRainbow();  // Wyłącz efekt rainbow
-    server.send(200, "text/plain", "Efekt rainbow wyłączony");
+void handleToggleEffect(String effectName) {
+    if (effectName == "led") {
+        ledController.toggleStatic();
+        server.send(200, "text/plain", "Tryb LED zmieniony");
+    } else if (effectName == "rainbow") {
+        ledController.toggleRainbow();
+        server.send(200, "text/plain", "Tryb Rainbow zmieniony");
+    } else if (effectName == "pulsing") {
+        ledController.togglePulsing();
+        server.send(200, "text/plain", "Tryb Pulsing zmieniony");
+    }
 }
 
 void setup() {
@@ -53,17 +45,16 @@ void setup() {
     sensors.begin();
     wifiManager.connect();
 
-    server.on("/", handleRoot);            // Obsługa odczytu z czujników
-    server.on("/led/on", handleLedOn);     // Obsługa włączenia LED
-    server.on("/led/off", handleLedOff);   // Obsługa wyłączenia LED
-    server.on("/led/rainbow/on", handleRainbowOn);   // Włączenie efektu rainbow
-    server.on("/led/rainbow/off", handleRainbowOff); // Wyłączenie efektu rainbow
+    server.on("/", handleRoot);
+    server.on("/toggle/led", []() { handleToggleEffect("led"); });
+    server.on("/toggle/rainbow", []() { handleToggleEffect("rainbow"); });
+    server.on("/toggle/pulsing", []() { handleToggleEffect("pulsing"); });
 
-    server.begin();  // Uruchomienie serwera po zarejestrowaniu handlerów
+    server.begin();
     Serial.println("Serwer HTTP uruchomiony!");
 }
 
 void loop() {
-    server.handleClient();         // Obsługa żądań HTTP
-    ledController.updateRainbow(); // Aktualizacja efektu rainbow (jeśli aktywny)
+    server.handleClient();
+    ledController.updateEffects();
 }
