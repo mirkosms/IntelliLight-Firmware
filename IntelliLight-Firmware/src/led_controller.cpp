@@ -13,6 +13,7 @@ void LEDController::init() {
 
 void LEDController::clear() {
     FastLED.clear();
+    show();
 }
 
 void LEDController::show() {
@@ -24,6 +25,7 @@ void LEDController::setAll(int r, int g, int b) {
     show();
 }
 
+// Reszta funkcji pozostaje bez zmian
 void LEDController::setWhiteTemperature(int cool, int warm) {
     for (int i = 0; i < NUM_LEDS; i++) {
         int red = 0, green = 0, blue = 0;

@@ -18,11 +18,23 @@ void handleRoot() {
     float temperature = sensors.readTemperature();
     float humidity = sensors.readHumidity();
 
-    String response = "<h1>Odczyt z czujnika DHT22</h1>";
-    response += "Temperatura: " + String(temperature) + " &deg;C<br>";
-    response += "Wilgotność: " + String(humidity) + " %<br>";
+    // Odpowiedź w formacie JSON
+    String response = "{";
+    response += "\"temperature\": " + String(temperature, 2) + ",";
+    response += "\"humidity\": " + String(humidity, 2);
+    response += "}";
 
-    server.send(200, "text/html", response);
+    server.send(200, "application/json", response);
+}
+
+void handleLedOn() {
+    ledController.setAll(0, 0, 255);  // Ustawienie niebieskiego koloru
+    server.send(200, "text/plain", "LED włączone (niebieski)");
+}
+
+void handleLedOff() {
+    ledController.clear();  // Wyłączenie LED-ów
+    server.send(200, "text/plain", "LED wyłączone");
 }
 
 void setup() {
@@ -31,8 +43,11 @@ void setup() {
     sensors.begin();
     wifiManager.connect();
 
-    server.on("/", handleRoot);  // Obsługa strony głównej
-    server.begin();
+    server.on("/", handleRoot);           // Obsługa odczytu z czujników
+    server.on("/led/on", handleLedOn);    // Obsługa włączenia LED
+    server.on("/led/off", handleLedOff);  // Obsługa wyłączenia LED
+
+    server.begin();  // Uruchomienie serwera po zarejestrowaniu handlerów
     Serial.println("Serwer HTTP uruchomiony!");
 }
 
