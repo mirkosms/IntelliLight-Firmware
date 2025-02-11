@@ -4,7 +4,6 @@
 #include "wifi_manager.h"
 #include <WebServer.h>
 
-// Dane do Wi-Fi
 const char* ssid = "FunBox2-99AC";
 const char* password = "RBpc55EN";
 
@@ -33,8 +32,7 @@ void handleSensorData() {
     server.send(200, "application/json", response);
 }
 
-void handleToggleEffect(String effectName) {
-    Serial.println("Odebrano żądanie toggle: " + effectName);
+void handleToggleEffect(String effectName, String param = "") {
     if (effectName == "led") {
         ledController.toggleStatic();
         server.send(200, "text/plain", "Tryb LED zmieniony");
@@ -44,6 +42,15 @@ void handleToggleEffect(String effectName) {
     } else if (effectName == "pulsing") {
         ledController.togglePulsing();
         server.send(200, "text/plain", "Tryb Pulsing zmieniony");
+    } else if (effectName == "night") {
+        ledController.toggleNightMode();
+        server.send(200, "text/plain", "Tryb Night Mode zmieniony");
+    } else if (effectName == "twinkle") {
+        ledController.toggleTwinkle();
+        server.send(200, "text/plain", "Tryb Twinkle zmieniony");
+    } else if (effectName == "white") {
+        ledController.toggleWhiteTemperature(param);
+        server.send(200, "text/plain", "Temperatura barwowa ustawiona: " + param);
     } else {
         server.send(404, "text/plain", "Nieznany efekt");
     }
@@ -60,6 +67,11 @@ void setup() {
     server.on("/toggle/led", []() { handleToggleEffect("led"); });
     server.on("/toggle/rainbow", []() { handleToggleEffect("rainbow"); });
     server.on("/toggle/pulsing", []() { handleToggleEffect("pulsing"); });
+    server.on("/toggle/night", []() { handleToggleEffect("night"); });
+    server.on("/toggle/twinkle", []() { handleToggleEffect("twinkle"); });
+    server.on("/toggle/white/neutral", []() { handleToggleEffect("white", "neutral"); });
+    server.on("/toggle/white/cool", []() { handleToggleEffect("white", "cool"); });
+    server.on("/toggle/white/warm", []() { handleToggleEffect("white", "warm"); });
 
     server.begin();
     Serial.println("Serwer HTTP uruchomiony!");

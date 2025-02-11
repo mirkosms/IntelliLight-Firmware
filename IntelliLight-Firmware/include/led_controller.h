@@ -21,6 +21,9 @@ public:
     void toggleStatic();
     void toggleRainbow();
     void togglePulsing();
+    void toggleNightMode();
+    void toggleTwinkle();
+    void toggleWhiteTemperature(const String& mode);
     void updateEffects();
 
 private:
@@ -28,6 +31,10 @@ private:
     bool isStaticActive;
     bool isRainbowActive;
     bool isPulsingActive;
+    bool isNightModeActive;
+    bool isTwinkleActive;
+    bool isWhiteTempActive;
+    String whiteTempMode;
     unsigned long lastUpdate;
     uint8_t rainbowHue;
     int pulsingBrightness;

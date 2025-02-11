@@ -6,6 +6,9 @@ LEDController::LEDController() {
     isStaticActive = false;
     isRainbowActive = false;
     isPulsingActive = false;
+    isNightModeActive = false;
+    isTwinkleActive = false;
+    isWhiteTempActive = false;
     lastUpdate = 0;
     rainbowHue = 0;
     pulsingBrightness = 0;
@@ -24,6 +27,9 @@ void LEDController::clear() {
     isStaticActive = false;
     isRainbowActive = false;
     isPulsingActive = false;
+    isNightModeActive = false;
+    isTwinkleActive = false;
+    isWhiteTempActive = false;
 }
 
 void LEDController::show() {
@@ -63,6 +69,46 @@ void LEDController::togglePulsing() {
     }
 }
 
+void LEDController::toggleNightMode() {
+    if (isNightModeActive) {
+        clear();
+    } else {
+        clear();
+        for (int i = 0; i < NUM_LEDS; i++) {
+            leds[i] = CRGB(255, 223, 186);  // Ciepłe światło
+        }
+        FastLED.setBrightness(80);  // Przyciemnione światło
+        show();
+        isNightModeActive = true;
+    }
+}
+
+void LEDController::toggleTwinkle() {
+    if (isTwinkleActive) {
+        clear();
+    } else {
+        clear();
+        isTwinkleActive = true;
+    }
+}
+
+void LEDController::toggleWhiteTemperature(const String& mode) {
+    if (isWhiteTempActive && whiteTempMode == mode) {
+        clear();
+    } else {
+        clear();
+        if (mode == "neutral") {
+            setWhiteTemperature(127, 127);
+        } else if (mode == "cool") {
+            setWhiteTemperature(255, 50);
+        } else if (mode == "warm") {
+            setWhiteTemperature(50, 255);
+        }
+        isWhiteTempActive = true;
+        whiteTempMode = mode;
+    }
+}
+
 void LEDController::updateEffects() {
     if (isRainbowActive && millis() - lastUpdate > 50) {
         for (int i = 0; i < NUM_LEDS; i++) {
@@ -81,6 +127,14 @@ void LEDController::updateEffects() {
         if (pulsingBrightness >= 255 || pulsingBrightness <= 0) {
             pulsingDirection = -pulsingDirection;
         }
+        lastUpdate = millis();
+    }
+
+    if (isTwinkleActive && millis() - lastUpdate > 150) {
+        for (int i = 0; i < NUM_LEDS; i++) {
+            leds[i] = random(10) > 7 ? CRGB::White : CRGB::Black;
+        }
+        show();
         lastUpdate = millis();
     }
 }
