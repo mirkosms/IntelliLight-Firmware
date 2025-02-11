@@ -15,6 +15,13 @@ WiFiManager wifiManager(ssid, password);
 WebServer server(80);
 
 void handleRoot() {
+    String response = "{";
+    response += "\"status\": \"ESP32 działa poprawnie\"";
+    response += "}";
+    server.send(200, "application/json", response);
+}
+
+void handleSensorData() {
     float temperature = sensors.readTemperature();
     float humidity = sensors.readHumidity();
 
@@ -27,6 +34,7 @@ void handleRoot() {
 }
 
 void handleToggleEffect(String effectName) {
+    Serial.println("Odebrano żądanie toggle: " + effectName);
     if (effectName == "led") {
         ledController.toggleStatic();
         server.send(200, "text/plain", "Tryb LED zmieniony");
@@ -36,6 +44,8 @@ void handleToggleEffect(String effectName) {
     } else if (effectName == "pulsing") {
         ledController.togglePulsing();
         server.send(200, "text/plain", "Tryb Pulsing zmieniony");
+    } else {
+        server.send(404, "text/plain", "Nieznany efekt");
     }
 }
 
@@ -46,6 +56,7 @@ void setup() {
     wifiManager.connect();
 
     server.on("/", handleRoot);
+    server.on("/sensor", handleSensorData);
     server.on("/toggle/led", []() { handleToggleEffect("led"); });
     server.on("/toggle/rainbow", []() { handleToggleEffect("rainbow"); });
     server.on("/toggle/pulsing", []() { handleToggleEffect("pulsing"); });
