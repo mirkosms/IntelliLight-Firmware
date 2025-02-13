@@ -3,6 +3,7 @@
 #include "sensors.h"
 #include "wifi_manager.h"
 #include <WebServer.h>
+#include <ESPmDNS.h>
 
 const char* ssid = "FunBox2-99AC";
 const char* password = "RBpc55EN";
@@ -14,46 +15,36 @@ WiFiManager wifiManager(ssid, password);
 WebServer server(80);
 
 void handleRoot() {
-    String response = "{";
-    response += "\"status\": \"ESP32 działa poprawnie\"";
-    response += "}";
-    server.send(200, "application/json", response);
+    server.send(200, "text/plain", "ESP32 działa poprawnie");
 }
 
 void handleSensorData() {
     float temperature = sensors.readTemperature();
     float humidity = sensors.readHumidity();
 
-    String response = "{";
-    response += "\"temperature\": " + String(temperature, 2) + ",";
-    response += "\"humidity\": " + String(humidity, 2);
-    response += "}";
+    String response = "Temperatura: " + String(temperature, 1) + " °C\n";
+    response += "Wilgotność: " + String(humidity, 1) + " %";
 
-    server.send(200, "application/json", response);
+    server.send(200, "text/plain", response);
+}
+
+void handleGetIP() {
+    server.send(200, "text/plain", WiFi.localIP().toString());
 }
 
 void handleToggleEffect(String effectName, String param = "") {
-    if (effectName == "led") {
-        ledController.toggleStatic();
-        server.send(200, "text/plain", "Tryb LED zmieniony");
-    } else if (effectName == "rainbow") {
-        ledController.toggleRainbow();
-        server.send(200, "text/plain", "Tryb Rainbow zmieniony");
-    } else if (effectName == "pulsing") {
-        ledController.togglePulsing();
-        server.send(200, "text/plain", "Tryb Pulsing zmieniony");
-    } else if (effectName == "night") {
-        ledController.toggleNightMode();
-        server.send(200, "text/plain", "Tryb Night Mode zmieniony");
-    } else if (effectName == "twinkle") {
-        ledController.toggleTwinkle();
-        server.send(200, "text/plain", "Tryb Twinkle zmieniony");
-    } else if (effectName == "white") {
-        ledController.toggleWhiteTemperature(param);
-        server.send(200, "text/plain", "Temperatura barwowa ustawiona: " + param);
-    } else {
+    if (effectName == "led") ledController.toggleStatic();
+    else if (effectName == "rainbow") ledController.toggleRainbow();
+    else if (effectName == "pulsing") ledController.togglePulsing();
+    else if (effectName == "night") ledController.toggleNightMode();
+    else if (effectName == "twinkle") ledController.toggleTwinkle();
+    else if (effectName == "white") ledController.toggleWhiteTemperature(param);
+    else {
         server.send(404, "text/plain", "Nieznany efekt");
+        return;
     }
+
+    server.send(200, "text/plain", "Tryb zmieniony: " + effectName);
 }
 
 void setup() {
@@ -62,8 +53,12 @@ void setup() {
     sensors.begin();
     wifiManager.connect();
 
+    if (MDNS.begin("esp32")) Serial.println("mDNS responder started");
+
     server.on("/", handleRoot);
     server.on("/sensor", handleSensorData);
+    server.on("/getIP", handleGetIP);
+    
     server.on("/toggle/led", []() { handleToggleEffect("led"); });
     server.on("/toggle/rainbow", []() { handleToggleEffect("rainbow"); });
     server.on("/toggle/pulsing", []() { handleToggleEffect("pulsing"); });
@@ -72,6 +67,8 @@ void setup() {
     server.on("/toggle/white/neutral", []() { handleToggleEffect("white", "neutral"); });
     server.on("/toggle/white/cool", []() { handleToggleEffect("white", "cool"); });
     server.on("/toggle/white/warm", []() { handleToggleEffect("white", "warm"); });
+
+    server.onNotFound([]() { server.send(404, "text/plain", "Błąd: Żądanie nieobsługiwane"); });
 
     server.begin();
     Serial.println("Serwer HTTP uruchomiony!");
