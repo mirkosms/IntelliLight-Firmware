@@ -11,10 +11,10 @@ const char* password = "RBpc55EN";
 // const char* password = "58214428";
 
 LEDController ledController;
-PomodoroTimer pomodoro(ledController);
+WebServer server(80);
+PomodoroTimer pomodoro(ledController, server);
 Sensors sensors;
 WiFiManager wifiManager(ssid, password);
-WebServer server(80);
 
 void handleRoot() {
     server.send(200, "text/plain", "ESP32 działa poprawnie");
@@ -49,6 +49,31 @@ void handleToggleEffect(String effectName, String param = "") {
     server.send(200, "text/plain", "Tryb zmieniony: " + effectName);
 }
 
+void handlePomodoro() {
+    if (!server.hasArg("mode")) {
+        Serial.println("Błąd: Brak parametru mode w żądaniu!");
+        server.send(400, "text/plain", "Błąd: Brak parametru mode");
+        return;
+    }
+
+    String mode = server.arg("mode");
+    Serial.println("Otrzymano żądanie Pomodoro: " + mode);
+
+    if (mode == "focus") {
+        pomodoro.startFocusSession(25);
+    } else if (mode == "break") {
+        pomodoro.startBreakSession(5);
+    } else if (mode == "reset") {
+        pomodoro.resetTimer();
+    } else {
+        Serial.println("Błąd: Nieznany tryb Pomodoro: " + mode);
+        server.send(400, "text/plain", "Błąd: Nieznany tryb Pomodoro");
+        return;
+    }
+
+    server.send(200, "text/plain", "Tryb Pomodoro: " + mode);
+}
+
 void setup() {
     Serial.begin(9600);
     ledController.init();
@@ -60,7 +85,8 @@ void setup() {
     server.on("/", handleRoot);
     server.on("/sensor", handleSensorData);
     server.on("/getIP", handleGetIP);
-    
+
+    // Handlery dla trybów LED
     server.on("/toggle/led", []() { handleToggleEffect("led"); });
     server.on("/toggle/rainbow", []() { handleToggleEffect("rainbow"); });
     server.on("/toggle/pulsing", []() { handleToggleEffect("pulsing"); });
@@ -69,6 +95,9 @@ void setup() {
     server.on("/toggle/white/neutral", []() { handleToggleEffect("white", "neutral"); });
     server.on("/toggle/white/cool", []() { handleToggleEffect("white", "cool"); });
     server.on("/toggle/white/warm", []() { handleToggleEffect("white", "warm"); });
+
+    // 🔹 Nowe handlery dla Pomodoro
+    server.on("/pomodoro", handlePomodoro);
 
     server.onNotFound([]() { server.send(404, "text/plain", "Błąd: Żądanie nieobsługiwane"); });
 
@@ -79,4 +108,5 @@ void setup() {
 void loop() {
     server.handleClient();
     ledController.updateEffects();
+    pomodoro.update();  // Aktualizacja pomodoro co iterację
 }

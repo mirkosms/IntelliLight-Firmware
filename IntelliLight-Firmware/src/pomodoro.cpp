@@ -1,38 +1,58 @@
 #include "pomodoro.h"
 
-PomodoroTimer::PomodoroTimer(LEDController& ledController) : leds(ledController) {}
+PomodoroTimer::PomodoroTimer(LEDController& ledController, WebServer& webServer)
+    : leds(ledController), server(webServer) {}
 
 void PomodoroTimer::startFocusSession(int focusMinutes) {
-    countdown(focusMinutes, CRGB::Green, 1);  // 1 dioda gaśnie co minutę
-    sessionCompleteEffect();
+    totalMinutes = focusMinutes;
+    ledsPerMinute = 1;
+    sessionColor = CRGB::Green;
+    elapsedMinutes = 0;
+    startMillis = millis();
+    running = true;
+    leds.setAll(sessionColor.r, sessionColor.g, sessionColor.b);
 }
 
 void PomodoroTimer::startBreakSession(int breakMinutes) {
-    countdown(breakMinutes, CRGB::Red, 6);  // 6 diod gasną co minutę
-    sessionCompleteEffect();
+    totalMinutes = breakMinutes;
+    ledsPerMinute = 6;
+    sessionColor = CRGB::Red;
+    elapsedMinutes = 0;
+    startMillis = millis();
+    running = true;
+    leds.setAll(sessionColor.r, sessionColor.g, sessionColor.b);
 }
 
 void PomodoroTimer::resetTimer() {
     leds.clear();
     leds.show();
+    running = false;
 }
 
-void PomodoroTimer::countdown(int totalMinutes, CRGB color, int ledsPerMinute) {
-    leds.setAll(color.r, color.g, color.b);  // Ustaw wszystkie diody na kolor sesji
+void PomodoroTimer::update() {
+    if (!running) return;
 
-    for (int minute = 0; minute < totalMinutes; minute++) {
-        delay(60000);  // Odczekaj minutę
+    unsigned long currentMillis = millis();
+    if (currentMillis - startMillis >= 60000) { // Minuta minęła
+        startMillis = currentMillis;
+        elapsedMinutes++;
+
         for (int i = 0; i < ledsPerMinute; i++) {
-            int ledIndex = (minute * ledsPerMinute) + i;
+            int ledIndex = (elapsedMinutes * ledsPerMinute) + i;
             if (ledIndex < NUM_LEDS) {
-                leds.setZoneColor(ledIndex, ledIndex, CRGB::Black);  // Zgaś diodę
+                leds.setZoneColor(ledIndex, ledIndex, CRGB::Black);
             }
+        }
+
+        if (elapsedMinutes >= totalMinutes) {
+            running = false;
+            sessionCompleteEffect();
         }
     }
 }
 
 void PomodoroTimer::sessionCompleteEffect() {
-    leds.setAll(255, 255, 255);  // Zapal wszystkie diody na biało na 1 sekundę
+    leds.setAll(255, 255, 255);
     delay(1000);
     leds.clear();
     leds.show();
