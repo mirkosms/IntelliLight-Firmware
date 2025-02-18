@@ -3,6 +3,7 @@
 LEDController::LEDController() {
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
     FastLED.setBrightness(180);
+    currentBrightness = 180; // Domyślna jasność
     isStaticActive = false;
     isRainbowActive = false;
     isPulsingActive = false;
@@ -75,9 +76,9 @@ void LEDController::toggleNightMode() {
     } else {
         clear();
         for (int i = 0; i < NUM_LEDS; i++) {
-            leds[i] = CRGB(255, 223, 186);  // Ciepłe światło
+            leds[i] = CRGB(255, 223, 186);
         }
-        FastLED.setBrightness(80);  // Przyciemnione światło
+        FastLED.setBrightness(80);
         show();
         isNightModeActive = true;
     }
@@ -112,7 +113,7 @@ void LEDController::toggleWhiteTemperature(const String& mode) {
 void LEDController::updateEffects() {
     if (isRainbowActive && millis() - lastUpdate > 50) {
         for (int i = 0; i < NUM_LEDS; i++) {
-            leds[i] = CHSV((rainbowHue + i * 10) % 255, 255, 255);
+            leds[i] = CHSV((rainbowHue + i * 10) % 255, 255, currentBrightness);
         }
         show();
         rainbowHue++;
@@ -139,7 +140,6 @@ void LEDController::updateEffects() {
     }
 }
 
-// Pozostałe efekty LED
 void LEDController::setWhiteTemperature(int cool, int warm) {
     for (int i = 0; i < NUM_LEDS; i++) {
         int red = 0, green = 0, blue = 0;
@@ -164,8 +164,13 @@ void LEDController::setWhiteTemperature(int cool, int warm) {
 }
 
 void LEDController::setBrightness(int brightness) {
-    FastLED.setBrightness(constrain(brightness, 0, 255));
+    currentBrightness = constrain(brightness, 0, 255);
+    FastLED.setBrightness(currentBrightness);
     show();
+}
+
+int LEDController::getBrightness() {
+    return currentBrightness;
 }
 
 void LEDController::twinkleEffect(const CRGB& color, int chance, int speed) {

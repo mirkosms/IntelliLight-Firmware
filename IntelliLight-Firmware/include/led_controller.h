@@ -26,6 +26,8 @@ public:
     void toggleWhiteTemperature(const String& mode);
     void updateEffects();
 
+    int getBrightness();  // Nowa funkcja do pobrania aktualnej jasności
+
 private:
     CRGB leds[NUM_LEDS];
     bool isStaticActive;
@@ -39,6 +41,7 @@ private:
     uint8_t rainbowHue;
     int pulsingBrightness;
     int pulsingDirection;
+    int currentBrightness;  // Dodana zmienna do przechowywania aktualnej jasności
 };
 
 #endif // LED_CONTROLLER_H

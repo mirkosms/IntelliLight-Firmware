@@ -7,8 +7,6 @@
 
 const char* ssid = "FunBox2-99AC";
 const char* password = "RBpc55EN";
-// const char* ssid = "TP-Link_FBE4";
-// const char* password = "58214428";
 
 LEDController ledController;
 WebServer server(80);
@@ -18,6 +16,17 @@ WiFiManager wifiManager(ssid, password);
 
 void handleRoot() {
     server.send(200, "text/plain", "ESP32 działa poprawnie");
+}
+
+void handleSetBrightness() {
+    if (!server.hasArg("value")) {
+        server.send(400, "text/plain", "Błąd: Brak wartości jasności");
+        return;
+    }
+    
+    int brightness = server.arg("value").toInt();
+    ledController.setBrightness(brightness);
+    server.send(200, "text/plain", "Ustawiono jasność: " + String(brightness));
 }
 
 void handleSensorData() {
@@ -85,8 +94,7 @@ void setup() {
     server.on("/", handleRoot);
     server.on("/sensor", handleSensorData);
     server.on("/getIP", handleGetIP);
-
-    // Handlery dla trybów LED
+    server.on("/brightness", handleSetBrightness);
     server.on("/toggle/led", []() { handleToggleEffect("led"); });
     server.on("/toggle/rainbow", []() { handleToggleEffect("rainbow"); });
     server.on("/toggle/pulsing", []() { handleToggleEffect("pulsing"); });
@@ -95,8 +103,6 @@ void setup() {
     server.on("/toggle/white/neutral", []() { handleToggleEffect("white", "neutral"); });
     server.on("/toggle/white/cool", []() { handleToggleEffect("white", "cool"); });
     server.on("/toggle/white/warm", []() { handleToggleEffect("white", "warm"); });
-
-    // 🔹 Nowe handlery dla Pomodoro
     server.on("/pomodoro", handlePomodoro);
 
     server.onNotFound([]() { server.send(404, "text/plain", "Błąd: Żądanie nieobsługiwane"); });
@@ -108,5 +114,5 @@ void setup() {
 void loop() {
     server.handleClient();
     ledController.updateEffects();
-    pomodoro.update();  // Aktualizacja pomodoro co iterację
+    pomodoro.update();
 }
