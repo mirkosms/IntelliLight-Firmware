@@ -13,6 +13,7 @@ public:
     void setAll(int r, int g, int b);
     void setWhiteTemperature(int cool, int warm);
     void setBrightness(int brightness);
+    void setAutoBrightness(float lux);  // Nowa funkcja do automatycznej regulacji jasności
     void setZoneColor(int start, int end, const CRGB& color);
     void twinkleEffect(const CRGB& color, int chance, int speed);
     void pulsingEffect(const CRGB& color, int speed);

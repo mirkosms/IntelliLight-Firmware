@@ -163,6 +163,12 @@ void LEDController::setWhiteTemperature(int cool, int warm) {
     show();
 }
 
+void LEDController::setAutoBrightness(float lux) {
+    int brightness = map(lux, 0, 500, 255, 50);  // Skalowanie jasności: od ciemności (255) do jasnego pokoju (50)
+    brightness = constrain(brightness, 50, 255); // Ograniczenie wartości
+    setBrightness(brightness);
+}
+
 void LEDController::setBrightness(int brightness) {
     currentBrightness = constrain(brightness, 0, 255);
     FastLED.setBrightness(currentBrightness);

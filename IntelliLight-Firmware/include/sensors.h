@@ -2,6 +2,8 @@
 #define SENSORS_H
 
 #include <DHT.h>
+#include <BH1750.h>
+#include <Wire.h>
 
 #define DHT_PIN 4    // Pin GPIO do sygnału DATA
 #define DHT_TYPE DHT22  // Typ czujnika: DHT22
@@ -12,8 +14,11 @@ public:
     void begin();
     float readTemperature();
     float readHumidity();
+    float readLightLevel();  // Nowa funkcja do odczytu natężenia światła
+    
 private:
     DHT dht;
+    BH1750 lightMeter;
 };
 
 #endif // SENSORS_H

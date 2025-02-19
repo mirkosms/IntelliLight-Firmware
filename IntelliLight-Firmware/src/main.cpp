@@ -14,6 +14,8 @@ PomodoroTimer pomodoro(ledController, server);
 Sensors sensors;
 WiFiManager wifiManager(ssid, password);
 
+bool autoBrightnessEnabled = false;  // Flaga dla trybu automatycznego dostosowywania jasności
+
 void handleRoot() {
     server.send(200, "text/plain", "ESP32 działa poprawnie");
 }
@@ -25,19 +27,28 @@ void handleSetBrightness() {
     }
     
     int brightness = server.arg("value").toInt();
+    autoBrightnessEnabled = false;  // Wyłączenie automatycznej regulacji jasności
     ledController.setBrightness(brightness);
     server.send(200, "text/plain", "Ustawiono jasność: " + String(brightness));
+}
+
+void handleToggleAutoBrightness() {
+    autoBrightnessEnabled = !autoBrightnessEnabled;
+    server.send(200, "text/plain", "Automatyczna jasność: " + String(autoBrightnessEnabled ? "ON" : "OFF"));
 }
 
 void handleSensorData() {
     float temperature = sensors.readTemperature();
     float humidity = sensors.readHumidity();
+    float lightIntensity = sensors.readLightLevel();  // Odczyt BH1750
 
     String response = "Temperatura: " + String(temperature, 1) + " °C\n";
-    response += "Wilgotność: " + String(humidity, 1) + " %";
+    response += "Wilgotność: " + String(humidity, 1) + " %\n";
+    response += "Natężenie światła: " + String(lightIntensity, 2) + " lx";
 
     server.send(200, "text/plain", response);
 }
+
 
 void handleGetIP() {
     server.send(200, "text/plain", WiFi.localIP().toString());
@@ -95,6 +106,7 @@ void setup() {
     server.on("/sensor", handleSensorData);
     server.on("/getIP", handleGetIP);
     server.on("/brightness", handleSetBrightness);
+    server.on("/toggle/autobrightness", handleToggleAutoBrightness);
     server.on("/toggle/led", []() { handleToggleEffect("led"); });
     server.on("/toggle/rainbow", []() { handleToggleEffect("rainbow"); });
     server.on("/toggle/pulsing", []() { handleToggleEffect("pulsing"); });
@@ -115,4 +127,8 @@ void loop() {
     server.handleClient();
     ledController.updateEffects();
     pomodoro.update();
+    if (autoBrightnessEnabled) {
+        float lux = sensors.readLightLevel();
+        ledController.setAutoBrightness(lux);
+    }
 }
