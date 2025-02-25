@@ -14,6 +14,7 @@ LEDController::LEDController() {
     rainbowHue = 0;
     pulsingBrightness = 0;
     pulsingDirection = 5;
+    manualOverride = false; // Domyślnie brak ręcznego sterowania
 }
 
 void LEDController::init() {
@@ -45,34 +46,44 @@ void LEDController::setAll(int r, int g, int b) {
 void LEDController::toggleStatic() {
     if (isStaticActive) {
         clear();
+        setManualOverride(false);
     } else {
         clear();
         setAll(0, 0, 255);
         isStaticActive = true;
+        setLastActiveEffect("static");
+        setManualOverride(true);
     }
 }
 
 void LEDController::toggleRainbow() {
     if (isRainbowActive) {
         clear();
+        setManualOverride(false);
     } else {
         clear();
         isRainbowActive = true;
+        setLastActiveEffect("rainbow");
+        setManualOverride(true);
     }
 }
 
 void LEDController::togglePulsing() {
     if (isPulsingActive) {
         clear();
+        setManualOverride(false);
     } else {
         clear();
         isPulsingActive = true;
+        setLastActiveEffect("pulsing");
+        setManualOverride(true);
     }
 }
 
 void LEDController::toggleNightMode() {
     if (isNightModeActive) {
         clear();
+        setManualOverride(false);
     } else {
         clear();
         for (int i = 0; i < NUM_LEDS; i++) {
@@ -81,21 +92,27 @@ void LEDController::toggleNightMode() {
         FastLED.setBrightness(80);
         show();
         isNightModeActive = true;
+        setLastActiveEffect("night");
+        setManualOverride(true);
     }
 }
 
 void LEDController::toggleTwinkle() {
     if (isTwinkleActive) {
         clear();
+        setManualOverride(false);
     } else {
         clear();
         isTwinkleActive = true;
+        setLastActiveEffect("twinkle");
+        setManualOverride(true);
     }
 }
 
 void LEDController::toggleWhiteTemperature(const String& mode) {
     if (isWhiteTempActive && whiteTempMode == mode) {
         clear();
+        setManualOverride(false);
     } else {
         clear();
         if (mode == "neutral") {
@@ -107,6 +124,7 @@ void LEDController::toggleWhiteTemperature(const String& mode) {
         }
         isWhiteTempActive = true;
         whiteTempMode = mode;
+        setLastActiveEffect("static");
     }
 }
 
@@ -215,4 +233,25 @@ void LEDController::nightMode() {
         setAll(255, 244, 229);
         delay(50);
     }
+}
+
+bool LEDController::isAnyEffectActive() {
+    return isStaticActive || isRainbowActive || isPulsingActive || 
+           isNightModeActive || isTwinkleActive || isWhiteTempActive;
+}
+
+void LEDController::setManualOverride(bool state) {
+    manualOverride = state;
+}
+
+bool LEDController::isManualOverride() {
+    return manualOverride;
+}
+
+void LEDController::setLastActiveEffect(const String& effect) {
+    lastActiveEffect = effect;
+}
+
+String LEDController::getLastActiveEffect() {
+    return lastActiveEffect;
 }

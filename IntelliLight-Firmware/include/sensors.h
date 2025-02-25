@@ -7,14 +7,16 @@
 
 #define DHT_PIN 4    // Pin GPIO do sygnału DATA
 #define DHT_TYPE DHT22  // Typ czujnika: DHT22
+#define PIR_PIN 13  // GPIO, do którego podłączony jest HC-SR501
 
 class Sensors {
 public:
     Sensors();
     void begin();
     float readTemperature();
-    float readHumidity();
+    float readHumidity(); 
     float readLightLevel();  // Nowa funkcja do odczytu natężenia światła
+    bool readMotion(); // Nowa funkcja do odczytu ruchu
     
 private:
     DHT dht;

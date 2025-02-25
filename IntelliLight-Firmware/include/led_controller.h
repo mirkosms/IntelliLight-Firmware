@@ -27,7 +27,14 @@ public:
     void toggleWhiteTemperature(const String& mode);
     void updateEffects();
 
-    int getBrightness();  // Nowa funkcja do pobrania aktualnej jasności
+    int getBrightness();
+    bool isAnyEffectActive();
+    void setManualOverride(bool state);
+    bool isManualOverride();
+    void setLastActiveEffect(const String& effect);
+    String getLastActiveEffect();
+
+
 
 private:
     CRGB leds[NUM_LEDS];
@@ -43,6 +50,9 @@ private:
     int pulsingBrightness;
     int pulsingDirection;
     int currentBrightness;  // Dodana zmienna do przechowywania aktualnej jasności
+    bool manualOverride = false; // Flaga oznaczająca ręczne sterowanie LED
+    String lastActiveEffect = "none"; // Przechowuje ostatni aktywny tryb
+
 };
 
 #endif // LED_CONTROLLER_H

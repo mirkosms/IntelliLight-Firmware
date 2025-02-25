@@ -6,6 +6,7 @@ void Sensors::begin() {
     dht.begin();
     Wire.begin();  // Inicjalizacja I2C
     lightMeter.begin();  // Inicjalizacja BH1750
+    pinMode(PIR_PIN, INPUT);  // Inicjalizacja czujnika ruchu
 }
 
 float Sensors::readTemperature() {
@@ -26,4 +27,8 @@ float Sensors::readHumidity() {
 
 float Sensors::readLightLevel() {
     return lightMeter.readLightLevel();  // Pobranie wartości natężenia światła w luksach
+}
+
+bool Sensors::readMotion() {
+    return digitalRead(PIR_PIN) == HIGH;  // Zwraca true, jeśli wykryto ruch
 }

@@ -15,6 +15,9 @@ Sensors sensors;
 WiFiManager wifiManager(ssid, password);
 
 bool autoBrightnessEnabled = false;  // Flaga dla trybu automatycznego dostosowywania jasności
+bool motionEnabled = true;  // Domyślnie tryb automatycznego sterowania ruchem jest włączony
+unsigned long motionTimeout = 60000;  // Czas bezczynności w ms (domyślnie 60s)
+unsigned long lastMotionTime = 0;
 
 void handleRoot() {
     server.send(200, "text/plain", "ESP32 działa poprawnie");
@@ -94,6 +97,22 @@ void handlePomodoro() {
     server.send(200, "text/plain", "Tryb Pomodoro: " + mode);
 }
 
+void handleSetMotionTimeout() {
+    if (!server.hasArg("seconds")) {
+        server.send(400, "text/plain", "Błąd: Brak wartości timeout");
+        return;
+    }
+    
+    motionTimeout = server.arg("seconds").toInt() * 1000;  // Konwersja na ms
+    server.send(200, "text/plain", "Ustawiono timeout na: " + String(motionTimeout / 1000) + " sekund");
+}
+
+void handleToggleMotionMode() {
+    motionEnabled = !motionEnabled;
+    server.send(200, "text/plain", "Tryb czujnika ruchu: " + String(motionEnabled ? "ON" : "OFF"));
+}
+
+
 void setup() {
     Serial.begin(9600);
     ledController.init();
@@ -107,6 +126,8 @@ void setup() {
     server.on("/getIP", handleGetIP);
     server.on("/brightness", handleSetBrightness);
     server.on("/toggle/autobrightness", handleToggleAutoBrightness);
+    server.on("/setMotionTimeout", handleSetMotionTimeout);
+    server.on("/toggleMotionMode", handleToggleMotionMode);
     server.on("/toggle/led", []() { handleToggleEffect("led"); });
     server.on("/toggle/rainbow", []() { handleToggleEffect("rainbow"); });
     server.on("/toggle/pulsing", []() { handleToggleEffect("pulsing"); });
@@ -131,4 +152,37 @@ void loop() {
         float lux = sensors.readLightLevel();
         ledController.setAutoBrightness(lux);
     }
+    if (motionEnabled) {
+        bool motionDetected = sensors.readMotion();
+    
+        if (motionDetected) {
+            lastMotionTime = millis();
+            
+            if (!ledController.isAnyEffectActive()) {
+                Serial.println("Ruch wykryty! Przywracam poprzedni tryb LED.");
+    
+                if (ledController.getLastActiveEffect() == "none") {
+                    ledController.setAll(0, 0, 255); // Domyślnie niebieski LED
+                } else {
+                    String lastEffect = ledController.getLastActiveEffect();
+                    if (lastEffect == "static") ledController.toggleStatic();
+                    else if (lastEffect == "rainbow") ledController.toggleRainbow();
+                    else if (lastEffect == "pulsing") ledController.togglePulsing();
+                    else if (lastEffect == "night") ledController.toggleNightMode();
+                    else if (lastEffect == "twinkle") ledController.toggleTwinkle();
+                }
+    
+                ledController.setManualOverride(false); // Resetujemy override, bo teraz wróciliśmy do ruchu
+            }
+        } 
+    
+        // Sprawdzamy, czy od ostatniego ruchu minął określony czas i czy diody były ustawione ręcznie
+        else if (millis() - lastMotionTime > motionTimeout) {
+            if (ledController.isManualOverride() || !motionDetected) {
+                Serial.println("Brak ruchu przez określony czas. Wyłączam LED.");
+                ledController.clear();
+                ledController.setManualOverride(false); // Resetujemy override po wyłączeniu
+            }
+        }
+    }    
 }
