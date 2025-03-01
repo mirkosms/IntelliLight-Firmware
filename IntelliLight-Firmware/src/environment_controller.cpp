@@ -13,6 +13,9 @@ void EnvironmentController::update() {
 
 void EnvironmentController::updateAutoBrightness() {
     if (autoBrightnessEnabled) {
+        String activeEffect = ledController.getLastActiveEffect();
+        // Jeśli aktywny jest tryb night, pulsing lub rainbow, auto brightness nie działa
+        if (activeEffect == "night" || activeEffect == "pulsing" || activeEffect == "rainbow") return;
         float lux = sensors.readLightLevel();
         ledController.setAutoBrightness(lux);
     }
@@ -22,23 +25,27 @@ void EnvironmentController::updateMotionSensor() {
     if (motionEnabled && !pomodoro.isRunning()) {
         bool motionDetected = sensors.readMotion();
         if (motionDetected) {
-            lastMotionTime = millis();
-            if (!ledController.isAnyEffectActive()) {
-                if (ledController.getLastActiveEffect() == "none") {
-                    ledController.setAll(0, 0, 255);
-                } else {
-                    String lastEffect = ledController.getLastActiveEffect();
-                    if (lastEffect == "static") ledController.toggleStatic();
-                    else if (lastEffect == "rainbow") ledController.toggleRainbow();
-                    else if (lastEffect == "pulsing") ledController.togglePulsing();
-                    else if (lastEffect == "night") ledController.toggleNightMode();
-                    else if (lastEffect == "twinkle") ledController.toggleTwinkle();
+            // Wprowadzamy debounce: przywracamy efekt tylko, gdy minęły co najmniej 2000 ms od ostatniego przywrócenia
+            if (millis() - lastMotionTime > 2000) {
+                lastMotionTime = millis();
+                if (!ledController.is_led_on()) {
+                    if (ledController.getLastActiveEffect() != "none") {
+                        String lastEffect = ledController.getLastActiveEffect();
+                        if (lastEffect == "white") {
+                            ledController.toggle_effect("white", ledController.get_white_temp_mode(), true);
+                        } else {
+                            ledController.toggle_effect(lastEffect, "", true);
+                        }
+                    } else {
+                        ledController.setAll(0, 0, 255);
+                    }
                 }
                 ledController.setManualOverride(false);
             }
         } else if (millis() - lastMotionTime > motionTimeout) {
-            Serial.println("No motion detected for specified time. Turning off LEDs.");
-            ledController.clear();
+            Serial.println("Brak ruchu przez określony czas. Wyłączam LED.");
+            // Przy wyłączaniu zachowujemy ostatni tryb
+            ledController.clear(true);
             ledController.setManualOverride(false);
         }
     }

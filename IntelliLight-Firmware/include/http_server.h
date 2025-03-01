@@ -7,6 +7,8 @@
 #include "sensors.h"
 #include "wifi_manager.h"
 
-void setupHTTPServer(WebServer &server, LEDController &ledController, PomodoroTimer &pomodoro, Sensors &sensors, WiFiManager &wifiManager, bool &autoBrightnessEnabled, bool &motionEnabled, unsigned long &motionTimeout);
+void setupHTTPServer(WebServer &server, LEDController &ledController, PomodoroTimer &pomodoro,
+                     Sensors &sensors, WiFiManager &wifiManager, bool &autoBrightnessEnabled,
+                     bool &motionEnabled, unsigned long &motionTimeout);
 
 #endif // HTTP_SERVER_H

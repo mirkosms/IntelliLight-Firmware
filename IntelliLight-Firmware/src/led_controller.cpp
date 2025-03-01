@@ -1,10 +1,9 @@
 #include "led_controller.h"
 
-LEDController::LEDController() : manualOverride(false), lastActiveEffect("none") {
+LEDController::LEDController() : manualOverride(false), lastActiveEffect("none"), leds_on(false) {
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
     currentBrightness = 180; // Domyślna jasność
     FastLED.setBrightness(currentBrightness);
-    isStaticActive = false;
     isRainbowActive = false;
     isPulsingActive = false;
     isNightModeActive = false;
@@ -22,16 +21,23 @@ void LEDController::init() {
     delay(100);
 }
 
-void LEDController::clear() {
+// Wersja z parametrem preserve_effect
+void LEDController::clear(bool preserve_effect) {
     FastLED.clear();
     show();
-    // Resetujemy flagi wszystkich efektów
-    isStaticActive = false;
     isRainbowActive = false;
     isPulsingActive = false;
     isNightModeActive = false;
     isTwinkleActive = false;
     isWhiteTempActive = false;
+    leds_on = false;
+    if (!preserve_effect) {
+        lastActiveEffect = "none";
+    }
+}
+
+void LEDController::clear() {
+    clear(false);
 }
 
 void LEDController::show() {
@@ -40,141 +46,8 @@ void LEDController::show() {
 
 void LEDController::setAll(int r, int g, int b) {
     fill_solid(leds, NUM_LEDS, CRGB(r, g, b));
+    leds_on = true;
     show();
-}
-
-void LEDController::toggleStatic() {
-    if (isStaticActive) {
-        clear();
-        setManualOverride(false);
-    } else {
-        clear();
-        setAll(0, 0, 255);
-        isStaticActive = true;
-        setLastActiveEffect("static");
-        setManualOverride(true);
-    }
-}
-
-void LEDController::toggleRainbow() {
-    if (isRainbowActive) {
-        clear();
-        setManualOverride(false);
-    } else {
-        clear();
-        isRainbowActive = true;
-        setLastActiveEffect("rainbow");
-        setManualOverride(true);
-    }
-}
-
-void LEDController::togglePulsing() {
-    if (isPulsingActive) {
-        clear();
-        setManualOverride(false);
-    } else {
-        clear();
-        isPulsingActive = true;
-        setLastActiveEffect("pulsing");
-        setManualOverride(true);
-    }
-}
-
-void LEDController::toggleNightMode() {
-    if (isNightModeActive) {
-        clear();
-        setManualOverride(false);
-    } else {
-        clear();
-        for (int i = 0; i < NUM_LEDS; i++) {
-            leds[i] = CRGB(255, 223, 186);
-        }
-        FastLED.setBrightness(80);
-        show();
-        isNightModeActive = true;
-        setLastActiveEffect("night");
-        setManualOverride(true);
-    }
-}
-
-void LEDController::toggleTwinkle() {
-    if (isTwinkleActive) {
-        clear();
-        setManualOverride(false);
-    } else {
-        clear();
-        isTwinkleActive = true;
-        setLastActiveEffect("twinkle");
-        setManualOverride(true);
-    }
-}
-
-void LEDController::toggleWhiteTemperature(const String& mode) {
-    if (isWhiteTempActive && whiteTempMode == mode) {
-        clear();
-        setManualOverride(false);
-    } else {
-        clear();
-        if (mode == "neutral") {
-            setWhiteTemperature(127, 127);
-        } else if (mode == "cool") {
-            setWhiteTemperature(255, 50);
-        } else if (mode == "warm") {
-            setWhiteTemperature(50, 255);
-        }
-        isWhiteTempActive = true;
-        whiteTempMode = mode;
-        setLastActiveEffect("static");
-    }
-}
-
-// Prywatne funkcje pomocnicze aktualizujące efekty
-
-void LEDController::updateRainbowEffect() {
-    if (millis() - lastUpdate > 50) {
-        for (int i = 0; i < NUM_LEDS; i++) {
-            leds[i] = CHSV((rainbowHue + i * 10) % 255, 255, currentBrightness);
-        }
-        show();
-        rainbowHue++;
-        lastUpdate = millis();
-    }
-}
-
-void LEDController::updatePulsingEffect() {
-    if (millis() - lastUpdate > 50) {
-        FastLED.setBrightness(pulsingBrightness);
-        fill_solid(leds, NUM_LEDS, CRGB::Blue);
-        show();
-        pulsingBrightness += pulsingDirection;
-        if (pulsingBrightness >= 255 || pulsingBrightness <= 0) {
-            pulsingDirection = -pulsingDirection;
-        }
-        lastUpdate = millis();
-    }
-}
-
-void LEDController::updateTwinkleEffect() {
-    if (millis() - lastUpdate > 150) {
-        for (int i = 0; i < NUM_LEDS; i++) {
-            leds[i] = (random(10) > 7) ? CRGB::White : CRGB::Black;
-        }
-        show();
-        lastUpdate = millis();
-    }
-}
-
-void LEDController::updateEffects() {
-    // Aktualizacja ciągłych efektów odbywa się osobno dla każdego trybu
-    if (isRainbowActive) {
-        updateRainbowEffect();
-    }
-    if (isPulsingActive) {
-        updatePulsingEffect();
-    }
-    if (isTwinkleActive) {
-        updateTwinkleEffect();
-    }
 }
 
 void LEDController::setWhiteTemperature(int cool, int warm) {
@@ -195,13 +68,8 @@ void LEDController::setWhiteTemperature(int cool, int warm) {
         }
         leds[i] = CRGB(constrain(red, 0, 255), constrain(green, 0, 255), constrain(blue, 0, 255));
     }
+    leds_on = true;
     show();
-}
-
-void LEDController::setAutoBrightness(float lux) {
-    int brightness = map(lux, 0, 500, 255, 50);  // Od ciemności (255) do jasności (50)
-    brightness = constrain(brightness, 50, 255);
-    setBrightness(brightness);
 }
 
 void LEDController::setBrightness(int brightness) {
@@ -214,19 +82,27 @@ int LEDController::getBrightness() {
     return currentBrightness;
 }
 
-void LEDController::twinkleEffect(const CRGB& color, int chance, int speed) {
-    for (int i = 0; i < NUM_LEDS; i++) {
-        leds[i] = (random(100) < chance) ? color : CRGB::Black;
-    }
-    show();
-    delay(speed);
+void LEDController::setAutoBrightness(float lux) {
+    int brightness = map(lux, 0, 500, 255, 50);  // Od ciemności (255) do jasności (50)
+    brightness = constrain(brightness, 50, 255);
+    setBrightness(brightness);
 }
 
 void LEDController::setZoneColor(int start, int end, const CRGB& color) {
     for (int i = constrain(start, 0, NUM_LEDS - 1); i <= constrain(end, start, NUM_LEDS - 1); i++) {
         leds[i] = color;
     }
+    leds_on = true;
     show();
+}
+
+void LEDController::twinkleEffect(const CRGB& color, int chance, int speed) {
+    for (int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = (random(100) < chance) ? color : CRGB::Black;
+    }
+    leds_on = true;
+    show();
+    delay(speed);
 }
 
 void LEDController::pulsingEffect(const CRGB& color, int speed) {
@@ -242,19 +118,69 @@ void LEDController::pulsingEffect(const CRGB& color, int speed) {
         show();
         delay(speed);
     }
+    leds_on = true;
 }
 
 void LEDController::nightMode() {
-    for (int brightness = 255; brightness >= 50; brightness -= 5) {
-        FastLED.setBrightness(brightness);
-        setAll(255, 244, 229);
-        delay(50);
+    // Ustawienie night mode jako trybu warm white, identycznego jak w trybie white z parametrem "warm"
+    setWhiteTemperature(50, 255);
+    FastLED.setBrightness(80);
+    leds_on = true;
+    show();
+    isNightModeActive = true;
+}
+
+// Jednolita funkcja toggle_effect
+void LEDController::toggle_effect(const String &effect, const String &param, bool forceActivate) {
+    if (!forceActivate && lastActiveEffect == effect) {
+        if (effect == "white") {
+            // Dla trybu white, jeśli już taki tryb jest aktywny i parametr się zgadza, wyłącz efekt.
+            if (get_white_temp_mode() == param) {
+                clear();
+                setManualOverride(false);
+                lastActiveEffect = "none";
+                return;
+            }
+            // Jeśli parametr inny, przełącz na nowy tryb.
+        } else {
+            clear();
+            setManualOverride(false);
+            lastActiveEffect = "none";
+            return;
+        }
     }
+    clear();
+    if (effect == "static") {
+        setAll(0, 0, 255);
+    } else if (effect == "rainbow") {
+        isRainbowActive = true;
+    } else if (effect == "pulsing") {
+        isPulsingActive = true;
+    } else if (effect == "night") {
+        nightMode();
+    } else if (effect == "twinkle") {
+        isTwinkleActive = true;
+    } else if (effect == "white") {
+        if (param == "neutral") {
+            setWhiteTemperature(127, 127);
+        } else if (param == "cool") {
+            setWhiteTemperature(255, 50);
+        } else if (param == "warm") {
+            setWhiteTemperature(50, 255);
+        }
+        isWhiteTempActive = true;
+        whiteTempMode = param;
+    }
+    lastActiveEffect = effect;
+    setManualOverride(true);
 }
 
 bool LEDController::isAnyEffectActive() {
-    return isStaticActive || isRainbowActive || isPulsingActive ||
-           isNightModeActive || isTwinkleActive || isWhiteTempActive;
+    return (lastActiveEffect != "none");
+}
+
+bool LEDController::is_led_on() {
+    return leds_on;
 }
 
 void LEDController::setManualOverride(bool state) {
@@ -265,10 +191,43 @@ bool LEDController::isManualOverride() {
     return manualOverride;
 }
 
-void LEDController::setLastActiveEffect(const String& effect) {
+void LEDController::setLastActiveEffect(const String &effect) {
     lastActiveEffect = effect;
 }
 
 String LEDController::getLastActiveEffect() {
     return lastActiveEffect;
+}
+
+// Nowa metoda – zwraca bieżący podtryb dla trybu "white"
+String LEDController::get_white_temp_mode() {
+    return whiteTempMode;
+}
+
+void LEDController::updateEffects() {
+    if (isRainbowActive && millis() - lastUpdate > 50) {
+        for (int i = 0; i < NUM_LEDS; i++) {
+            leds[i] = CHSV((rainbowHue + i * 10) % 255, 255, currentBrightness);
+        }
+        show();
+        rainbowHue++;
+        lastUpdate = millis();
+    }
+    if (isPulsingActive && millis() - lastUpdate > 50) {
+        FastLED.setBrightness(pulsingBrightness);
+        fill_solid(leds, NUM_LEDS, CRGB::Blue);
+        show();
+        pulsingBrightness += pulsingDirection;
+        if (pulsingBrightness >= 255 || pulsingBrightness <= 0) {
+            pulsingDirection = -pulsingDirection;
+        }
+        lastUpdate = millis();
+    }
+    if (isTwinkleActive && millis() - lastUpdate > 150) {
+        for (int i = 0; i < NUM_LEDS; i++) {
+            leds[i] = (random(10) > 7) ? CRGB::White : CRGB::Black;
+        }
+        show();
+        lastUpdate = millis();
+    }
 }

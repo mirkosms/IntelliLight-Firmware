@@ -1,7 +1,6 @@
 #include "http_server.h"
 #include <ESPmDNS.h>
 
-// Funkcje pomocnicze obsługujące poszczególne żądania
 void handleRoot(WebServer &server) {
     server.send(200, "text/plain", "ESP32 działa poprawnie");
 }
@@ -26,7 +25,6 @@ void handleSensorData(WebServer &server, Sensors &sensors) {
     float temperature = sensors.readTemperature();
     float humidity = sensors.readHumidity();
     float lightIntensity = sensors.readLightLevel();
-
     String response = "Temperatura: " + String(temperature, 1) + " °C\n";
     response += "Wilgotność: " + String(humidity, 1) + " %\n";
     response += "Natężenie światła: " + String(lightIntensity, 2) + " lx";
@@ -37,22 +35,13 @@ void handleGetIP(WebServer &server) {
     server.send(200, "text/plain", WiFi.localIP().toString());
 }
 
-// Obsługa trybów LED – blokujemy zmianę, gdy Pomodoro jest aktywne
-void handleToggleEffect(WebServer &server, LEDController &ledController, PomodoroTimer &pomodoro, const String &effectName, const String &param = "") {
+void handleToggleEffect(WebServer &server, LEDController &ledController, PomodoroTimer &pomodoro,
+                          const String &effectName, const String &param) {
     if (pomodoro.isRunning()) {
         server.send(200, "text/plain", "Tryb Pomodoro jest aktywny. Proszę zresetować timer, aby zmienić tryb LED.");
         return;
     }
-    if (effectName == "led") ledController.toggleStatic();
-    else if (effectName == "rainbow") ledController.toggleRainbow();
-    else if (effectName == "pulsing") ledController.togglePulsing();
-    else if (effectName == "night") ledController.toggleNightMode();
-    else if (effectName == "twinkle") ledController.toggleTwinkle();
-    else if (effectName == "white") ledController.toggleWhiteTemperature(param);
-    else {
-        server.send(404, "text/plain", "Nieznany efekt");
-        return;
-    }
+    ledController.toggle_effect(effectName, param);
     server.send(200, "text/plain", "Tryb zmieniony: " + effectName);
 }
 
@@ -89,8 +78,9 @@ void handleToggleMotionMode(WebServer &server, bool &motionEnabled) {
     server.send(200, "text/plain", "Tryb czujnika ruchu: " + String(motionEnabled ? "ON" : "OFF"));
 }
 
-// Funkcja konfigurująca serwer HTTP
-void setupHTTPServer(WebServer &server, LEDController &ledController, PomodoroTimer &pomodoro, Sensors &sensors, WiFiManager &wifiManager, bool &autoBrightnessEnabled, bool &motionEnabled, unsigned long &motionTimeout) {
+void setupHTTPServer(WebServer &server, LEDController &ledController, PomodoroTimer &pomodoro,
+                     Sensors &sensors, WiFiManager &wifiManager, bool &autoBrightnessEnabled,
+                     bool &motionEnabled, unsigned long &motionTimeout) {
     server.on("/", [&server]() { handleRoot(server); });
     server.on("/brightness", [&server, &ledController, &autoBrightnessEnabled]() { handleSetBrightness(server, ledController, autoBrightnessEnabled); });
     server.on("/toggle/autobrightness", [&server, &autoBrightnessEnabled]() { handleToggleAutoBrightness(server, autoBrightnessEnabled); });
@@ -98,19 +88,14 @@ void setupHTTPServer(WebServer &server, LEDController &ledController, PomodoroTi
     server.on("/getIP", [&server]() { handleGetIP(server); });
     server.on("/setMotionTimeout", [&server, &motionTimeout]() { handleSetMotionTimeout(server, motionTimeout); });
     server.on("/toggleMotionMode", [&server, &motionEnabled]() { handleToggleMotionMode(server, motionEnabled); });
-    
-    // Obsługa efektów LED
-    server.on("/toggle/led", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "led"); });
-    server.on("/toggle/rainbow", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "rainbow"); });
-    server.on("/toggle/pulsing", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "pulsing"); });
-    server.on("/toggle/night", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "night"); });
-    server.on("/toggle/twinkle", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "twinkle"); });
+    server.on("/toggle/led", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "static", ""); });
+    server.on("/toggle/rainbow", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "rainbow", ""); });
+    server.on("/toggle/pulsing", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "pulsing", ""); });
+    server.on("/toggle/night", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "night", ""); });
+    server.on("/toggle/twinkle", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "twinkle", ""); });
     server.on("/toggle/white/neutral", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "white", "neutral"); });
     server.on("/toggle/white/cool", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "white", "cool"); });
     server.on("/toggle/white/warm", [&server, &ledController, &pomodoro]() { handleToggleEffect(server, ledController, pomodoro, "white", "warm"); });
-    
-    // Obsługa Pomodoro
     server.on("/pomodoro", [&server, &pomodoro]() { handlePomodoro(server, pomodoro); });
-    
     server.onNotFound([&server]() { server.send(404, "text/plain", "Błąd: Żądanie nieobsługiwane"); });
 }
