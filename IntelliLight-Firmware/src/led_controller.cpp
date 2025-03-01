@@ -1,9 +1,9 @@
 #include "led_controller.h"
 
-LEDController::LEDController() {
+LEDController::LEDController() : manualOverride(false), lastActiveEffect("none") {
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-    FastLED.setBrightness(180);
     currentBrightness = 180; // Domyślna jasność
+    FastLED.setBrightness(currentBrightness);
     isStaticActive = false;
     isRainbowActive = false;
     isPulsingActive = false;
@@ -14,7 +14,6 @@ LEDController::LEDController() {
     rainbowHue = 0;
     pulsingBrightness = 0;
     pulsingDirection = 5;
-    manualOverride = false; // Domyślnie brak ręcznego sterowania
 }
 
 void LEDController::init() {
@@ -26,6 +25,7 @@ void LEDController::init() {
 void LEDController::clear() {
     FastLED.clear();
     show();
+    // Resetujemy flagi wszystkich efektów
     isStaticActive = false;
     isRainbowActive = false;
     isPulsingActive = false;
@@ -128,8 +128,10 @@ void LEDController::toggleWhiteTemperature(const String& mode) {
     }
 }
 
-void LEDController::updateEffects() {
-    if (isRainbowActive && millis() - lastUpdate > 50) {
+// Prywatne funkcje pomocnicze aktualizujące efekty
+
+void LEDController::updateRainbowEffect() {
+    if (millis() - lastUpdate > 50) {
         for (int i = 0; i < NUM_LEDS; i++) {
             leds[i] = CHSV((rainbowHue + i * 10) % 255, 255, currentBrightness);
         }
@@ -137,8 +139,10 @@ void LEDController::updateEffects() {
         rainbowHue++;
         lastUpdate = millis();
     }
+}
 
-    if (isPulsingActive && millis() - lastUpdate > 50) {
+void LEDController::updatePulsingEffect() {
+    if (millis() - lastUpdate > 50) {
         FastLED.setBrightness(pulsingBrightness);
         fill_solid(leds, NUM_LEDS, CRGB::Blue);
         show();
@@ -148,20 +152,34 @@ void LEDController::updateEffects() {
         }
         lastUpdate = millis();
     }
+}
 
-    if (isTwinkleActive && millis() - lastUpdate > 150) {
+void LEDController::updateTwinkleEffect() {
+    if (millis() - lastUpdate > 150) {
         for (int i = 0; i < NUM_LEDS; i++) {
-            leds[i] = random(10) > 7 ? CRGB::White : CRGB::Black;
+            leds[i] = (random(10) > 7) ? CRGB::White : CRGB::Black;
         }
         show();
         lastUpdate = millis();
     }
 }
 
+void LEDController::updateEffects() {
+    // Aktualizacja ciągłych efektów odbywa się osobno dla każdego trybu
+    if (isRainbowActive) {
+        updateRainbowEffect();
+    }
+    if (isPulsingActive) {
+        updatePulsingEffect();
+    }
+    if (isTwinkleActive) {
+        updateTwinkleEffect();
+    }
+}
+
 void LEDController::setWhiteTemperature(int cool, int warm) {
     for (int i = 0; i < NUM_LEDS; i++) {
         int red = 0, green = 0, blue = 0;
-
         if (cool > 0 && warm == 0) {
             blue = cool * 0.4;
             green = cool * 0.4;
@@ -175,15 +193,14 @@ void LEDController::setWhiteTemperature(int cool, int warm) {
             green = (cool + warm) / 3;
             blue = cool * 0.4;
         }
-
         leds[i] = CRGB(constrain(red, 0, 255), constrain(green, 0, 255), constrain(blue, 0, 255));
     }
     show();
 }
 
 void LEDController::setAutoBrightness(float lux) {
-    int brightness = map(lux, 0, 500, 255, 50);  // Skalowanie jasności: od ciemności (255) do jasnego pokoju (50)
-    brightness = constrain(brightness, 50, 255); // Ograniczenie wartości
+    int brightness = map(lux, 0, 500, 255, 50);  // Od ciemności (255) do jasności (50)
+    brightness = constrain(brightness, 50, 255);
     setBrightness(brightness);
 }
 
@@ -199,7 +216,7 @@ int LEDController::getBrightness() {
 
 void LEDController::twinkleEffect(const CRGB& color, int chance, int speed) {
     for (int i = 0; i < NUM_LEDS; i++) {
-        leds[i] = random(100) < chance ? color : CRGB::Black;
+        leds[i] = (random(100) < chance) ? color : CRGB::Black;
     }
     show();
     delay(speed);
@@ -236,7 +253,7 @@ void LEDController::nightMode() {
 }
 
 bool LEDController::isAnyEffectActive() {
-    return isStaticActive || isRainbowActive || isPulsingActive || 
+    return isStaticActive || isRainbowActive || isPulsingActive ||
            isNightModeActive || isTwinkleActive || isWhiteTempActive;
 }
 

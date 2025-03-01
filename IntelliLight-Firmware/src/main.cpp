@@ -14,9 +14,9 @@ PomodoroTimer pomodoro(ledController, server);
 Sensors sensors;
 WiFiManager wifiManager(ssid, password);
 
-bool autoBrightnessEnabled = false;  // Flaga dla trybu automatycznego dostosowywania jasności
-bool motionEnabled = true;  // Domyślnie tryb automatycznego sterowania ruchem jest włączony
-unsigned long motionTimeout = 60000;  // Czas bezczynności w ms (domyślnie 60s)
+bool autoBrightnessEnabled = false;  // Tryb automatycznej regulacji jasności
+bool motionEnabled = false;            // Domyślnie czujnik ruchu wyłączony
+unsigned long motionTimeout = 60000;   // Timeout bezczynności (60s)
 unsigned long lastMotionTime = 0;
 
 void handleRoot() {
@@ -30,7 +30,7 @@ void handleSetBrightness() {
     }
     
     int brightness = server.arg("value").toInt();
-    autoBrightnessEnabled = false;  // Wyłączenie automatycznej regulacji jasności
+    autoBrightnessEnabled = false;  // Wyłączenie automatycznej regulacji
     ledController.setBrightness(brightness);
     server.send(200, "text/plain", "Ustawiono jasność: " + String(brightness));
 }
@@ -43,7 +43,7 @@ void handleToggleAutoBrightness() {
 void handleSensorData() {
     float temperature = sensors.readTemperature();
     float humidity = sensors.readHumidity();
-    float lightIntensity = sensors.readLightLevel();  // Odczyt BH1750
+    float lightIntensity = sensors.readLightLevel();  // Odczyt z BH1750
 
     String response = "Temperatura: " + String(temperature, 1) + " °C\n";
     response += "Wilgotność: " + String(humidity, 1) + " %\n";
@@ -52,12 +52,17 @@ void handleSensorData() {
     server.send(200, "text/plain", response);
 }
 
-
 void handleGetIP() {
     server.send(200, "text/plain", WiFi.localIP().toString());
 }
 
 void handleToggleEffect(String effectName, String param = "") {
+    // Jeśli tryb Pomodoro jest aktywny, odrzucamy zmianę trybu LED
+    if (pomodoro.isRunning()) {
+        server.send(200, "text/plain", "Tryb Pomodoro jest aktywny. Proszę zresetować timer, aby zmienić tryb LED.");
+        return;
+    }
+    // Wykonujemy przełączenie efektu
     if (effectName == "led") ledController.toggleStatic();
     else if (effectName == "rainbow") ledController.toggleRainbow();
     else if (effectName == "pulsing") ledController.togglePulsing();
@@ -68,7 +73,6 @@ void handleToggleEffect(String effectName, String param = "") {
         server.send(404, "text/plain", "Nieznany efekt");
         return;
     }
-
     server.send(200, "text/plain", "Tryb zmieniony: " + effectName);
 }
 
@@ -93,7 +97,6 @@ void handlePomodoro() {
         server.send(400, "text/plain", "Błąd: Nieznany tryb Pomodoro");
         return;
     }
-
     server.send(200, "text/plain", "Tryb Pomodoro: " + mode);
 }
 
@@ -111,7 +114,6 @@ void handleToggleMotionMode() {
     motionEnabled = !motionEnabled;
     server.send(200, "text/plain", "Tryb czujnika ruchu: " + String(motionEnabled ? "ON" : "OFF"));
 }
-
 
 void setup() {
     Serial.begin(9600);
@@ -148,21 +150,20 @@ void loop() {
     server.handleClient();
     ledController.updateEffects();
     pomodoro.update();
+
     if (autoBrightnessEnabled) {
         float lux = sensors.readLightLevel();
         ledController.setAutoBrightness(lux);
     }
-    if (motionEnabled) {
+
+    // Obsługa czujnika ruchu tylko gdy jest aktywny i Pomodoro nie działa
+    if (motionEnabled && !pomodoro.isRunning()) {
         bool motionDetected = sensors.readMotion();
-    
         if (motionDetected) {
             lastMotionTime = millis();
-            
             if (!ledController.isAnyEffectActive()) {
-                Serial.println("Ruch wykryty! Przywracam poprzedni tryb LED.");
-    
                 if (ledController.getLastActiveEffect() == "none") {
-                    ledController.setAll(0, 0, 255); // Domyślnie niebieski LED
+                    ledController.setAll(0, 0, 255);
                 } else {
                     String lastEffect = ledController.getLastActiveEffect();
                     if (lastEffect == "static") ledController.toggleStatic();
@@ -171,18 +172,12 @@ void loop() {
                     else if (lastEffect == "night") ledController.toggleNightMode();
                     else if (lastEffect == "twinkle") ledController.toggleTwinkle();
                 }
-    
-                ledController.setManualOverride(false); // Resetujemy override, bo teraz wróciliśmy do ruchu
+                ledController.setManualOverride(false);
             }
-        } 
-    
-        // Sprawdzamy, czy od ostatniego ruchu minął określony czas i czy diody były ustawione ręcznie
-        else if (millis() - lastMotionTime > motionTimeout) {
-            if (ledController.isManualOverride() || !motionDetected) {
-                Serial.println("Brak ruchu przez określony czas. Wyłączam LED.");
-                ledController.clear();
-                ledController.setManualOverride(false); // Resetujemy override po wyłączeniu
-            }
+        } else if (millis() - lastMotionTime > motionTimeout) {
+            Serial.println("Brak ruchu przez określony czas. Wyłączam LED.");
+            ledController.clear();
+            ledController.setManualOverride(false);
         }
-    }    
+    }
 }

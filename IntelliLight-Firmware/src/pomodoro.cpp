@@ -57,3 +57,7 @@ void PomodoroTimer::sessionCompleteEffect() {
     leds.clear();
     leds.show();
 }
+
+bool PomodoroTimer::isRunning() {
+    return running;
+}
