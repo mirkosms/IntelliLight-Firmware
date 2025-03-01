@@ -12,7 +12,8 @@ void Sensors::begin() {
 float Sensors::readTemperature() {
     float temp = dht.readTemperature();
     if (isnan(temp)) {
-        return -999.0;  // Wartość błędna, jeśli odczyt się nie powiódł
+        Serial.println("Błąd odczytu temperatury z DHT22.");
+        return -999.0;
     }
     return temp;
 }
@@ -20,7 +21,8 @@ float Sensors::readTemperature() {
 float Sensors::readHumidity() {
     float humidity = dht.readHumidity();
     if (isnan(humidity)) {
-        return -999.0;  // Wartość błędna, jeśli odczyt się nie powiódł
+        Serial.println("Błąd odczytu wilgotności z DHT22.");
+        return -999.0;
     }
     return humidity;
 }
