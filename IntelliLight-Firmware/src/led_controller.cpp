@@ -1,18 +1,14 @@
 #include "led_controller.h"
 
-LEDController::LEDController() : manualOverride(false), lastActiveEffect("none"), leds_on(false) {
+LEDController::LEDController() 
+    : manualOverride(false), lastActiveEffect("none"), leds_on(false),
+      isRainbowActive(false), isPulsingActive(false), isNightModeActive(false),
+      isTwinkleActive(false), isWhiteTempActive(false),
+      lastUpdate(0), rainbowHue(0), pulsingBrightness(0), pulsingDirection(5),
+      currentBrightness(180)
+{
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-    currentBrightness = 180; // Domyślna jasność
     FastLED.setBrightness(currentBrightness);
-    isRainbowActive = false;
-    isPulsingActive = false;
-    isNightModeActive = false;
-    isTwinkleActive = false;
-    isWhiteTempActive = false;
-    lastUpdate = 0;
-    rainbowHue = 0;
-    pulsingBrightness = 0;
-    pulsingDirection = 5;
 }
 
 void LEDController::init() {
@@ -21,7 +17,6 @@ void LEDController::init() {
     delay(100);
 }
 
-// Wersja z parametrem preserve_effect
 void LEDController::clear(bool preserve_effect) {
     FastLED.clear();
     show();
@@ -83,7 +78,7 @@ int LEDController::getBrightness() {
 }
 
 void LEDController::setAutoBrightness(float lux) {
-    int brightness = map(lux, 0, 500, 255, 50);  // Od ciemności (255) do jasności (50)
+    int brightness = map(lux, 0, 500, 255, 50);
     brightness = constrain(brightness, 50, 255);
     setBrightness(brightness);
 }
@@ -122,86 +117,12 @@ void LEDController::pulsingEffect(const CRGB& color, int speed) {
 }
 
 void LEDController::nightMode() {
-    // Ustawienie night mode jako trybu warm white, identycznego jak w trybie white z parametrem "warm"
+    // Night mode - tryb white "warm"
     setWhiteTemperature(50, 255);
     FastLED.setBrightness(80);
     leds_on = true;
     show();
     isNightModeActive = true;
-}
-
-// Jednolita funkcja toggle_effect
-void LEDController::toggle_effect(const String &effect, const String &param, bool forceActivate) {
-    if (!forceActivate && lastActiveEffect == effect) {
-        if (effect == "white") {
-            // Dla trybu white, jeśli już taki tryb jest aktywny i parametr się zgadza, wyłącz efekt.
-            if (get_white_temp_mode() == param) {
-                clear();
-                setManualOverride(false);
-                lastActiveEffect = "none";
-                return;
-            }
-            // Jeśli parametr inny, przełącz na nowy tryb.
-        } else {
-            clear();
-            setManualOverride(false);
-            lastActiveEffect = "none";
-            return;
-        }
-    }
-    clear();
-    if (effect == "static") {
-        setAll(0, 0, 255);
-    } else if (effect == "rainbow") {
-        isRainbowActive = true;
-    } else if (effect == "pulsing") {
-        isPulsingActive = true;
-    } else if (effect == "night") {
-        nightMode();
-    } else if (effect == "twinkle") {
-        isTwinkleActive = true;
-    } else if (effect == "white") {
-        if (param == "neutral") {
-            setWhiteTemperature(127, 127);
-        } else if (param == "cool") {
-            setWhiteTemperature(255, 50);
-        } else if (param == "warm") {
-            setWhiteTemperature(50, 255);
-        }
-        isWhiteTempActive = true;
-        whiteTempMode = param;
-    }
-    lastActiveEffect = effect;
-    setManualOverride(true);
-}
-
-bool LEDController::isAnyEffectActive() {
-    return (lastActiveEffect != "none");
-}
-
-bool LEDController::is_led_on() {
-    return leds_on;
-}
-
-void LEDController::setManualOverride(bool state) {
-    manualOverride = state;
-}
-
-bool LEDController::isManualOverride() {
-    return manualOverride;
-}
-
-void LEDController::setLastActiveEffect(const String &effect) {
-    lastActiveEffect = effect;
-}
-
-String LEDController::getLastActiveEffect() {
-    return lastActiveEffect;
-}
-
-// Nowa metoda – zwraca bieżący podtryb dla trybu "white"
-String LEDController::get_white_temp_mode() {
-    return whiteTempMode;
 }
 
 void LEDController::updateEffects() {
@@ -230,4 +151,36 @@ void LEDController::updateEffects() {
         show();
         lastUpdate = millis();
     }
+}
+
+bool LEDController::isAnyEffectActive() {
+    return (lastActiveEffect != "none");
+}
+
+bool LEDController::is_led_on() {
+    return leds_on;
+}
+
+void LEDController::setManualOverride(bool state) {
+    manualOverride = state;
+}
+
+bool LEDController::isManualOverride() {
+    return manualOverride;
+}
+
+void LEDController::setLastActiveEffect(const String &effect) {
+    lastActiveEffect = effect;
+}
+
+String LEDController::getLastActiveEffect() {
+    return lastActiveEffect;
+}
+
+String LEDController::get_white_temp_mode() {
+    return whiteTempMode;
+}
+
+void LEDController::set_white_temp_mode(const String &mode) {
+    whiteTempMode = mode;
 }

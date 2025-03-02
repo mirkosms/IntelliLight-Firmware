@@ -4,6 +4,7 @@
 #include "wifi_manager.h"
 #include "http_server.h"
 #include "environment_controller.h"
+#include "led_effects_manager.h"
 #include "config.h"
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -16,7 +17,8 @@ WebServer server(80);
 PomodoroTimer pomodoro(ledController, server);
 Sensors sensors;
 WiFiManager wifiManager(ssid, password);
-EnvironmentController env_controller(sensors, ledController, pomodoro,
+LEDEffectsManager ledEffectsMgr(ledController);
+EnvironmentController envController(sensors, ledController, pomodoro,
                                      autoBrightnessEnabled, motionEnabled, motionTimeout);
 
 void setup() {
@@ -29,7 +31,6 @@ void setup() {
         Serial.println("mDNS responder started");
     }
 
-    // Konfiguracja serwera HTTP przez dedykowany moduł
     setupHTTPServer(server, ledController, pomodoro, sensors, wifiManager,
                       autoBrightnessEnabled, motionEnabled, motionTimeout);
 
@@ -41,5 +42,5 @@ void loop() {
     server.handleClient();
     ledController.updateEffects();
     pomodoro.update();
-    env_controller.update();
+    envController.update();
 }
