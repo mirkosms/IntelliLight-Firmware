@@ -117,7 +117,7 @@ void LEDController::pulsingEffect(const CRGB& color, int speed) {
 }
 
 void LEDController::nightMode() {
-    // Night mode - tryb white "warm"
+    // Tryb night: ustawienie trybu white "warm"
     setWhiteTemperature(50, 255);
     FastLED.setBrightness(80);
     leds_on = true;
@@ -126,6 +126,7 @@ void LEDController::nightMode() {
 }
 
 void LEDController::updateEffects() {
+    // Rainbow effect
     if (isRainbowActive && millis() - lastUpdate > 50) {
         for (int i = 0; i < NUM_LEDS; i++) {
             leds[i] = CHSV((rainbowHue + i * 10) % 255, 255, currentBrightness);
@@ -134,6 +135,7 @@ void LEDController::updateEffects() {
         rainbowHue++;
         lastUpdate = millis();
     }
+    // Pulsing effect
     if (isPulsingActive && millis() - lastUpdate > 50) {
         FastLED.setBrightness(pulsingBrightness);
         fill_solid(leds, NUM_LEDS, CRGB::Blue);
@@ -144,6 +146,7 @@ void LEDController::updateEffects() {
         }
         lastUpdate = millis();
     }
+    // Twinkle effect
     if (isTwinkleActive && millis() - lastUpdate > 150) {
         for (int i = 0; i < NUM_LEDS; i++) {
             leds[i] = (random(10) > 7) ? CRGB::White : CRGB::Black;
@@ -183,4 +186,13 @@ String LEDController::get_white_temp_mode() {
 
 void LEDController::set_white_temp_mode(const String &mode) {
     whiteTempMode = mode;
+}
+
+void LEDController::setCustomColor(int r, int g, int b) {
+    customColor = CRGB(r, g, b);
+    setAll(r, g, b);
+}
+
+CRGB LEDController::getCustomColor() {
+    return customColor;
 }

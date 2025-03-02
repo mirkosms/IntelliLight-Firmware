@@ -13,6 +13,11 @@ void LEDEffectsManager::toggle_effect(const String &effect, const String &param,
                 led_controller.setLastActiveEffect("none");
                 return;
             }
+        } else if (effect == "custom") {
+            led_controller.clear();
+            led_controller.setManualOverride(false);
+            led_controller.setLastActiveEffect("none");
+            return;
         } else {
             led_controller.clear();
             led_controller.setManualOverride(false);
@@ -47,6 +52,10 @@ void LEDEffectsManager::toggle_effect(const String &effect, const String &param,
         led_controller.isWhiteTempActive = true;
         led_controller.set_white_temp_mode(param);
         led_controller.setLastActiveEffect("white");
+    } else if (effect == "custom") {
+        CRGB c = led_controller.getCustomColor();
+        led_controller.setAll(c.r, c.g, c.b);
+        led_controller.setLastActiveEffect("custom");
     }
     led_controller.setManualOverride(true);
 }

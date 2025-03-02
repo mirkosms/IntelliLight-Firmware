@@ -9,8 +9,10 @@ public:
     LEDController();
     void init();
     
+    // Funkcja clear z opcjonalnym zachowaniem efektu
     void clear(bool preserve_effect);
     void clear();
+    
     void show();
     void setAll(int r, int g, int b);
     void setWhiteTemperature(int cool, int warm);
@@ -18,12 +20,15 @@ public:
     void setAutoBrightness(float lux);
     void setZoneColor(int start, int end, const CRGB& color);
 
+    // Funkcje efektów (niskopoziomowe)
     void twinkleEffect(const CRGB& color, int chance, int speed);
     void pulsingEffect(const CRGB& color, int speed);
     void nightMode();
 
+    // Aktualizacja efektów ciągłych (np. rainbow, pulsing, twinkle)
     void updateEffects();
 
+    // Gettery/settery
     int getBrightness();
     bool isAnyEffectActive();
     bool is_led_on();
@@ -32,10 +37,14 @@ public:
     void setLastActiveEffect(const String &effect);
     String getLastActiveEffect();
     String get_white_temp_mode();
-    // Nowa metoda do ustawiania podtrybu dla trybu "white"
+    // Upewniamy się, że ta metoda jest zadeklarowana!
     void set_white_temp_mode(const String &mode);
 
-    // Flag dla efektów ciągłych (używane przez LEDEffectsManager)
+    // Dla trybu custom (niestandardowego koloru)
+    void setCustomColor(int r, int g, int b);
+    CRGB getCustomColor();
+
+    // Flagi dla efektów ciągłych – wykorzystywane przez LEDEffectsManager
     bool isRainbowActive;
     bool isPulsingActive;
     bool isNightModeActive;
@@ -46,6 +55,7 @@ private:
     CRGB leds[NUM_LEDS];
     String lastActiveEffect;
     String whiteTempMode;
+    CRGB customColor;
 
     unsigned long lastUpdate;
     uint8_t rainbowHue;

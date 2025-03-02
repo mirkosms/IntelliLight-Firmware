@@ -37,6 +37,8 @@ void EnvironmentController::updateMotionSensor() {
                         ledController.setAll(0, 0, 255);
                     } else if (lastEffect == "white") {
                         ledEffectsMgr.toggle_effect("white", ledController.get_white_temp_mode(), true);
+                    } else if (lastEffect == "custom") {
+                        ledEffectsMgr.toggle_effect("custom", "", true);
                     } else {
                         ledEffectsMgr.toggle_effect(lastEffect, "", true);
                     }
