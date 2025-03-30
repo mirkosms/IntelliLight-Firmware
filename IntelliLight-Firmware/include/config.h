@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 // Definicje stałych dla paska LED
-#define LED_PIN 5       // Pin ESP32 podłączony do Data In taśmy LED
+#define LED_PIN 14       // Pin ESP32 podłączony do Data In taśmy LED
 #define NUM_LEDS 30     // Liczba diod na taśmie
 
 // Globalne ustawienia konfiguracyjne
