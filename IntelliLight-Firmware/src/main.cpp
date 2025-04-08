@@ -28,14 +28,14 @@ void setup() {
     wifiManager.connect();
 
     if (MDNS.begin("esp32")) {
-        Serial.println("mDNS responder started");
+        Serial.println("Uruchomiono usługę mDNS!");
     }
 
     setupHTTPServer(server, ledController, pomodoro, sensors, wifiManager,
                       autoBrightnessEnabled, motionEnabled, motionTimeout);
 
     server.begin();
-    Serial.println("HTTP server started!");
+    Serial.println("Serwer HTTP został uruchomiony!");
 }
 
 void loop() {

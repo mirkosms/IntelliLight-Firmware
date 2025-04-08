@@ -10,12 +10,14 @@ void Sensors::begin() {
 }
 
 float Sensors::readTemperature() {
-    float temp = dht.readTemperature();
-    if (isnan(temp)) {
+    float temperature = dht.readTemperature();
+    if (isnan(temperature)) {
         Serial.println("Błąd odczytu temperatury z DHT22.");
         return -999.0;
     }
-    return temp;
+    Serial.print("CZUJNIKI: Temperatura = ");
+    Serial.println(temperature);
+    return temperature;
 }
 
 float Sensors::readHumidity() {
@@ -24,13 +26,25 @@ float Sensors::readHumidity() {
         Serial.println("Błąd odczytu wilgotności z DHT22.");
         return -999.0;
     }
+    Serial.print("CZUJNIKI: Wilgotność = ");
+    Serial.println(humidity);
     return humidity;
 }
 
 float Sensors::readLightLevel() {
-    return lightMeter.readLightLevel();  // Pobranie wartości natężenia światła w luksach
+    float lightLevel = lightMeter.readLightLevel();
+    Serial.print("CZUJNIKI: Natężenie światła = ");
+    Serial.println(lightLevel);
+    return lightLevel;
 }
 
 bool Sensors::readMotion() {
-    return digitalRead(PIR_PIN) == HIGH;  // Zwraca true, jeśli wykryto ruch
+    static bool previousState = false;
+    bool currentState = (digitalRead(PIR_PIN) == HIGH);
+    if (currentState != previousState) {
+        Serial.print("CZUJNIKI: Ruch = ");
+        Serial.println(currentState ? "WYKRYTO" : "BRAK");
+        previousState = currentState;
+    }
+    return currentState;
 }

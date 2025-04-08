@@ -11,6 +11,10 @@ void PomodoroTimer::startFocusSession(int focusMinutes) {
     startMillis = millis();
     running = true;
     leds.setAll(sessionColor.r, sessionColor.g, sessionColor.b);
+
+    Serial.print("POMODORO: Rozpoczęcie sesji skupienia (");
+    Serial.print(focusMinutes);
+    Serial.println(" min)");
 }
 
 void PomodoroTimer::startBreakSession(int breakMinutes) {
@@ -21,12 +25,17 @@ void PomodoroTimer::startBreakSession(int breakMinutes) {
     startMillis = millis();
     running = true;
     leds.setAll(sessionColor.r, sessionColor.g, sessionColor.b);
+
+    Serial.print("POMODORO: Rozpoczęcie sesji przerwy (");
+    Serial.print(breakMinutes);
+    Serial.println(" min)");
 }
 
 void PomodoroTimer::resetTimer() {
     leds.clear();
     leds.show();
     running = false;
+    Serial.println("POMODORO: Zresetowano timer");
 }
 
 void PomodoroTimer::update() {
@@ -52,6 +61,7 @@ void PomodoroTimer::update() {
 }
 
 void PomodoroTimer::sessionCompleteEffect() {
+    Serial.println("POMODORO: Sesja zakończona!");
     leds.setAll(255, 255, 255);
     delay(1000);
     leds.clear();

@@ -15,13 +15,18 @@ void EnvironmentController::update() {
 }
 
 void EnvironmentController::updateAutoBrightness() {
+    static unsigned long lastSensorUpdate = 0;
     if (autoBrightnessEnabled) {
         String activeEffect = ledController.getLastActiveEffect();
         if (activeEffect == "night" || activeEffect == "pulsing" || activeEffect == "rainbow") {
             return;
         }
-        float lux = sensors.readLightLevel();
-        ledController.setAutoBrightness(lux);
+        unsigned long currentTime = millis();
+        if (currentTime - lastSensorUpdate >= 1000) {  // odczyt raz na sekundę
+            lastSensorUpdate = currentTime;
+            float lux = sensors.readLightLevel();
+            ledController.setAutoBrightness(lux);
+        }
     }
 }
 
@@ -46,7 +51,6 @@ void EnvironmentController::updateMotionSensor() {
                 ledController.setManualOverride(false);
             }
         } else if (millis() - lastMotionTime > motionTimeout) {
-            Serial.println("Brak ruchu przez określony czas. Wyłączam LED.");
             ledController.clear(true);
             ledController.setManualOverride(false);
         }
