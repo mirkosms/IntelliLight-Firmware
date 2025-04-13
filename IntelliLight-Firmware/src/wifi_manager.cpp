@@ -7,7 +7,7 @@ void WiFiManager::connect() {
     WiFi.begin(ssid, password);
     Serial.print("Łączenie z Wi-Fi");
     unsigned long startAttemptTime = millis();
-    const unsigned long timeout = 20000; // Timeout 20 sekund
+    const unsigned long timeout = 20000;
 
     while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < timeout) {
         delay(500);

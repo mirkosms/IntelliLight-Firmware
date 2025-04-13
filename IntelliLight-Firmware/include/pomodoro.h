@@ -10,8 +10,8 @@ public:
     void startFocusSession(int focusMinutes = 30);
     void startBreakSession(int breakMinutes = 5);
     void resetTimer();
-    void update();  // Aktualizuje stan timera
-    bool isRunning();  // Nowa metoda: zwraca, czy tryb Pomodoro jest aktywny
+    void update();
+    bool isRunning();
 
 private:
     LEDController& leds;

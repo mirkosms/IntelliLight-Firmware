@@ -9,7 +9,6 @@ public:
     LEDController();
     void init();
     
-    // Funkcja clear z opcjonalnym zachowaniem efektu
     void clear(bool preserve_effect);
     void clear();
     
@@ -19,13 +18,9 @@ public:
     void setBrightness(int brightness);
     void setAutoBrightness(float lux);
     void setZoneColor(int start, int end, const CRGB& color);
-
-    // Funkcje efektów (niskopoziomowe)
     void twinkleEffect(const CRGB& color, int chance, int speed);
     void pulsingEffect(const CRGB& color, int speed);
     void nightMode();
-
-    // Aktualizacja efektów ciągłych (np. rainbow, pulsing, twinkle)
     void updateEffects();
 
     // Gettery/settery
@@ -37,14 +32,11 @@ public:
     void setLastActiveEffect(const String &effect);
     String getLastActiveEffect();
     String get_white_temp_mode();
-    // Upewniamy się, że ta metoda jest zadeklarowana!
     void set_white_temp_mode(const String &mode);
-
-    // Dla trybu custom (niestandardowego koloru)
     void setCustomColor(int r, int g, int b);
     CRGB getCustomColor();
 
-    // Flagi dla efektów ciągłych – wykorzystywane przez LEDEffectsManager
+    // Flagi dla efektów ciągłych
     bool isRainbowActive;
     bool isPulsingActive;
     bool isNightModeActive;

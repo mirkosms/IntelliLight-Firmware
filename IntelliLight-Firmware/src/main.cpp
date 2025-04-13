@@ -12,6 +12,9 @@
 const char* ssid = "FunBox2-99AC";
 const char* password = "RBpc55EN";
 
+// const char* ssid = "XDnet";
+// const char* password = "koronawirus2k20";
+
 LEDController ledController;
 WebServer server(80);
 PomodoroTimer pomodoro(ledController, server);

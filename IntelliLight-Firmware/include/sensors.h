@@ -15,8 +15,8 @@ public:
     void begin();
     float readTemperature();
     float readHumidity(); 
-    float readLightLevel();  // Nowa funkcja do odczytu natężenia światła
-    bool readMotion(); // Nowa funkcja do odczytu ruchu
+    float readLightLevel();
+    bool readMotion();
     
 private:
     DHT dht;

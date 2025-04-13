@@ -13,7 +13,6 @@ public:
     // forceActivate: gdy true, wymusza ponowne ustawienie efektu
     void toggle_effect(const String &effect, const String &param = "", bool forceActivate = false);
     
-    // Aktualizacja efektów ciągłych – obsługiwana przez LEDController::updateEffects()
     void update_effects();
     
 private:

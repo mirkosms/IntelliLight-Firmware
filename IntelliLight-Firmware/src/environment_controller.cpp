@@ -22,7 +22,7 @@ void EnvironmentController::updateAutoBrightness() {
             return;
         }
         unsigned long currentTime = millis();
-        if (currentTime - lastSensorUpdate >= 1000) {  // odczyt raz na sekundę
+        if (currentTime - lastSensorUpdate >= 1000) {
             lastSensorUpdate = currentTime;
             float lux = sensors.readLightLevel();
             ledController.setAutoBrightness(lux);
@@ -34,7 +34,7 @@ void EnvironmentController::updateMotionSensor() {
     if (motionEnabled && !pomodoro.isRunning()) {
         bool motionDetected = sensors.readMotion();
         if (motionDetected) {
-            if (millis() - lastMotionTime > 2000) { // debounce 2 sekundy
+            if (millis() - lastMotionTime > 2000) {
                 lastMotionTime = millis();
                 if (!ledController.is_led_on()) {
                     String lastEffect = ledController.getLastActiveEffect();

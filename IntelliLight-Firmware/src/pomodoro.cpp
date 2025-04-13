@@ -40,25 +40,24 @@ void PomodoroTimer::resetTimer() {
 
 void PomodoroTimer::update() {
     if (!running) return;
-
     unsigned long currentMillis = millis();
     if (currentMillis - startMillis >= 60000) { // Minuta minęła
-        startMillis = currentMillis;
-        elapsedMinutes++;
-
+        // Gaszenie LED reprezentujące postęp trybu Pomodoro dla bieżącej sesji
         for (int i = 0; i < ledsPerMinute; i++) {
             int ledIndex = (elapsedMinutes * ledsPerMinute) + i;
             if (ledIndex < NUM_LEDS) {
                 leds.setZoneColor(ledIndex, ledIndex, CRGB::Black);
             }
         }
-
+        elapsedMinutes++;             // Po wykonaniu pętli zwiększamy licznik minut
+        startMillis = currentMillis;  // Aktualizacja punktu startowego czasu
         if (elapsedMinutes >= totalMinutes) {
             running = false;
             sessionCompleteEffect();
         }
     }
 }
+
 
 void PomodoroTimer::sessionCompleteEffect() {
     Serial.println("POMODORO: Sesja zakończona!");
