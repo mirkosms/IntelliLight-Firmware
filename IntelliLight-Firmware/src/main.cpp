@@ -9,8 +9,14 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 
-const char* ssid = "FunBox2-99AC";
-const char* password = "RBpc55EN";
+// const char* ssid = "FunBox2-99AC";
+// const char* password = "RBpc55EN";
+
+// const char* ssid = "TP-Link_ABA6";
+// const char* password = "64116505";
+
+const char* ssid = "DESKTOPSMS";
+const char* password = "p12D092&";
 
 // const char* ssid = "XDnet";
 // const char* password = "koronawirus2k20";
